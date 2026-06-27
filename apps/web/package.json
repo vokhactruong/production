@@ -14,7 +14,6 @@
     "@school/types": "workspace:*",
     "@school/constants": "workspace:*",
     "axios": "^1.6.0",
-    "isomorphic-dompurify": "^2.12.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

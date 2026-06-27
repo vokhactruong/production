@@ -7,10 +7,7 @@ module.exports = {
   overrides: [
     {
       files: ["**/*.ts", "**/*.tsx"],
-      extends: [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended",
-      ],
+      extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
       rules: {
         "@typescript-eslint/no-explicit-any": "error",
         "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],

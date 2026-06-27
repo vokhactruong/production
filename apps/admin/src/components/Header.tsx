@@ -20,7 +20,9 @@ export default function Header() {
 
   const title =
     PAGE_TITLES[pathname] ??
-    (pathname.includes("/articles/") && pathname.includes("/edit") ? "Chỉnh sửa bài viết" : "School Portal");
+    (pathname.includes("/articles/") && pathname.includes("/edit")
+      ? "Chỉnh sửa bài viết"
+      : "School Portal");
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
@@ -32,7 +34,8 @@ export default function Header() {
         {user && (
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 text-sm font-semibold text-white">
-              {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+              {user.firstName.charAt(0)}
+              {user.lastName.charAt(0)}
             </div>
           </div>
         )}

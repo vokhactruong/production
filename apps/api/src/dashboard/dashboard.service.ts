@@ -9,8 +9,7 @@ export class DashboardService {
   async getStats(user: RequestUser) {
     const canUsers = user.permissions.includes("user.read");
     const canArticles =
-      user.permissions.includes("article.read") ||
-      user.permissions.includes("article.manage");
+      user.permissions.includes("article.read") || user.permissions.includes("article.manage");
     const canRoles = user.permissions.includes("role.read");
     const canPerms = user.permissions.includes("permission.read");
     const canCats = user.permissions.includes("category.read");

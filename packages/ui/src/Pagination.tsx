@@ -40,7 +40,10 @@ export function Pagination({ page, totalPages, onPageChange, className }: Pagina
 
       {pages.map((p, i) =>
         p === "..." ? (
-          <span key={`ellipsis-${i}`} className="flex h-8 w-8 items-center justify-center text-slate-400 text-sm">
+          <span
+            key={`ellipsis-${i}`}
+            className="flex h-8 w-8 items-center justify-center text-slate-400 text-sm"
+          >
             …
           </span>
         ) : (
@@ -49,9 +52,7 @@ export function Pagination({ page, totalPages, onPageChange, className }: Pagina
             onClick={() => onPageChange(p)}
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors",
-              page === p
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
+              page === p ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
             )}
           >
             {p}

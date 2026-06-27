@@ -4,12 +4,12 @@ A full-stack educational portal built with TurboRepo monorepo.
 
 ## Stack
 
-| App | Technology |
-|-----|-----------|
-| Backend | NestJS 10 + Prisma 5 + PostgreSQL 16 |
-| Admin | React 19 + Vite + Tailwind CSS |
-| Public | Next.js 15 App Router |
-| Architecture | TurboRepo + PNPM Workspace |
+| App          | Technology                           |
+| ------------ | ------------------------------------ |
+| Backend      | NestJS 10 + Prisma 5 + PostgreSQL 16 |
+| Admin        | React 19 + Vite + Tailwind CSS       |
+| Public       | Next.js 15 App Router                |
+| Architecture | TurboRepo + PNPM Workspace           |
 
 ## Getting Started
 
@@ -35,8 +35,8 @@ pnpm dev
 
 ## Default Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | superadmin@school.com | Admin@123456 |
-| Admin | admin@school.com | Admin@123456 |
-| Editor | editor@school.com | Editor@123456 |
+| Role        | Email                 | Password      |
+| ----------- | --------------------- | ------------- |
+| Super Admin | superadmin@school.com | Admin@123456  |
+| Admin       | admin@school.com      | Admin@123456  |
+| Editor      | editor@school.com     | Editor@123456 |

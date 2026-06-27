@@ -48,11 +48,20 @@ export class UsersService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.user.findMany({ where, select: USER_SELECT, skip, take: limit, orderBy: { createdAt: "desc" } }),
+      this.prisma.user.findMany({
+        where,
+        select: USER_SELECT,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
       this.prisma.user.count({ where }),
     ]);
 
-    return { items: items.map(this.formatUser), meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      items: items.map(this.formatUser),
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -87,7 +96,12 @@ export class UsersService {
       return newUser;
     });
 
-    await this.auditLogs.log({ userId: actorId, action: "CREATE", entity: "User", entityId: user.id });
+    await this.auditLogs.log({
+      userId: actorId,
+      action: "CREATE",
+      entity: "User",
+      entityId: user.id,
+    });
     return this.findOne(user.id);
   }
 

@@ -56,16 +56,19 @@ export function Modal({ open, onClose, title, children, size = "md", footer }: M
               aria-label="Đóng"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
         )}
         <div className="overflow-y-auto p-6">{children}</div>
         {footer && (
-          <div className="border-t border-slate-100 px-6 py-4 flex justify-end gap-3">
-            {footer}
-          </div>
+          <div className="border-t border-slate-100 px-6 py-4 flex justify-end gap-3">{footer}</div>
         )}
       </div>
     </div>

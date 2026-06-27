@@ -68,7 +68,10 @@ export class CategoriesService {
 
     return this.prisma.category.update({
       where: { id },
-      data: { ...(dto.name && { name: dto.name, slug }), ...(dto.description !== undefined && { description: dto.description }) },
+      data: {
+        ...(dto.name && { name: dto.name, slug }),
+        ...(dto.description !== undefined && { description: dto.description }),
+      },
       include: { _count: { select: { articles: true } } },
     });
   }

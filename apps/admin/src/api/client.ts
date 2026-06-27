@@ -28,7 +28,7 @@ api.interceptors.response.use(
   (res) => res,
   async (error: unknown) => {
     if (!axios.isAxiosError(error)) return Promise.reject(error);
-    const original = error.config as (typeof error.config) & { _retry?: boolean };
+    const original = error.config as typeof error.config & { _retry?: boolean };
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -65,9 +65,7 @@ export function getData<T>(res: { data: { data: T } }): T {
   return res.data.data;
 }
 
-export function getList<T>(res: {
-  data: { data: { items: T[]; meta: PaginationMeta } };
-}) {
+export function getList<T>(res: { data: { data: { items: T[]; meta: PaginationMeta } } }) {
   return res.data.data;
 }
 

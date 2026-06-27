@@ -32,10 +32,15 @@ export default function ArticlePreview() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+        <button
+          onClick={() => navigate(-1)}
+          className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+        >
           ← Quay lại
         </button>
-        <span className="rounded-lg bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">Xem trước</span>
+        <span className="rounded-lg bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
+          Xem trước
+        </span>
       </div>
 
       <article className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
@@ -52,14 +57,15 @@ export default function ArticlePreview() {
 
           <h1 className="mt-4 text-3xl font-bold text-slate-900">{article.title}</h1>
 
-          {article.excerpt && (
-            <p className="mt-3 text-lg text-slate-500">{article.excerpt}</p>
-          )}
+          {article.excerpt && <p className="mt-3 text-lg text-slate-500">{article.excerpt}</p>}
 
           <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
             {article.author && (
               <span>
-                Tác giả: <strong className="text-slate-700">{article.author.firstName} {article.author.lastName}</strong>
+                Tác giả:{" "}
+                <strong className="text-slate-700">
+                  {article.author.firstName} {article.author.lastName}
+                </strong>
               </span>
             )}
             {article.publishedAt && <span>Xuất bản: {formatDate(article.publishedAt)}</span>}
@@ -69,7 +75,12 @@ export default function ArticlePreview() {
           {article.tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
               {article.tags.map((tag) => (
-                <span key={tag} className="rounded-lg bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">#{tag}</span>
+                <span
+                  key={tag}
+                  className="rounded-lg bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600"
+                >
+                  #{tag}
+                </span>
               ))}
             </div>
           )}

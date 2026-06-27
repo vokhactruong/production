@@ -15,8 +15,12 @@ function Nav() {
           School Portal
         </Link>
         <nav className="flex items-center gap-6 text-sm font-medium text-slate-600">
-          <Link href="/" className="hover:text-slate-900 transition-colors">Trang chủ</Link>
-          <Link href="/tin-tuc" className="hover:text-slate-900 transition-colors">Tin tức</Link>
+          <Link href="/" className="hover:text-slate-900 transition-colors">
+            Trang chủ
+          </Link>
+          <Link href="/tin-tuc" className="hover:text-slate-900 transition-colors">
+            Tin tức
+          </Link>
         </nav>
       </div>
     </header>

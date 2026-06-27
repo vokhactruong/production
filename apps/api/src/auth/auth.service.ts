@@ -27,7 +27,9 @@ export class AuthService {
     return crypto.randomBytes(64).toString("hex");
   }
 
-  private async buildUserPermissions(userId: string): Promise<{ roles: string[]; permissions: string[] }> {
+  private async buildUserPermissions(
+    userId: string
+  ): Promise<{ roles: string[]; permissions: string[] }> {
     const userRoles = await this.prisma.userRole.findMany({
       where: { userId },
       include: {
@@ -50,7 +52,11 @@ export class AuthService {
     return { roles, permissions: Array.from(permSet) };
   }
 
-  private async generateTokens(user: { id: string; email: string }, roles: string[], permissions: string[]) {
+  private async generateTokens(
+    user: { id: string; email: string },
+    roles: string[],
+    permissions: string[]
+  ) {
     const payload = { sub: user.id, email: user.email, roles, permissions };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -252,6 +258,18 @@ export class AuthService {
     const { roles, permissions } = await this.buildUserPermissions(user.id);
     const { accessToken, refreshToken } = await this.generateTokens(user, roles, permissions);
 
-    return { accessToken, refreshToken, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, avatar: user.avatar, roles, permissions } };
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.avatar,
+        roles,
+        permissions,
+      },
+    };
   }
 }

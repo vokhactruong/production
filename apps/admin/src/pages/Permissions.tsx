@@ -40,7 +40,9 @@ export default function Permissions() {
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Quyền hạn hệ thống</h2>
-        <p className="mt-1 text-sm text-slate-500">Permissions được seed sẵn, không thể thêm/sửa/xóa.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Permissions được seed sẵn, không thể thêm/sửa/xóa.
+        </p>
       </div>
 
       {isLoading && (
@@ -51,7 +53,10 @@ export default function Permissions() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Object.entries(groups).map(([module, perms]) => {
-          const meta = MODULE_GROUPS[module] ?? { label: module, color: "bg-slate-100 text-slate-700" };
+          const meta = MODULE_GROUPS[module] ?? {
+            label: module,
+            color: "bg-slate-100 text-slate-700",
+          };
           return (
             <div key={module} className="rounded-2xl bg-white border border-slate-200 p-6">
               <div className="mb-4 flex items-center gap-2">

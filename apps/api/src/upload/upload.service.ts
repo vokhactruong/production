@@ -23,7 +23,7 @@ export class UploadService {
 
     if (!cloudName || !apiKey || !apiSecret) {
       this.logger.error(
-        "Cloudinary credentials missing. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in apps/api/.env",
+        "Cloudinary credentials missing. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in apps/api/.env"
       );
     }
 
@@ -40,10 +40,13 @@ export class UploadService {
 
     return new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder: "school-portal/articles", resource_type: "image" }, (error, result) => {
-          if (error || !result) return reject(new Error(error?.message ?? "Upload failed"));
-          resolve({ url: result.secure_url, publicId: result.public_id });
-        })
+        .upload_stream(
+          { folder: "school-portal/articles", resource_type: "image" },
+          (error, result) => {
+            if (error || !result) return reject(new Error(error?.message ?? "Upload failed"));
+            resolve({ url: result.secure_url, publicId: result.public_id });
+          }
+        )
         .end(file.buffer);
     });
   }
@@ -91,7 +94,7 @@ export class UploadService {
         });
         if (newCount >= MAX_RETRY) {
           this.logger.error(
-            `Cloudinary delete permanently failed for "${record.publicId}" after ${MAX_RETRY} retries`,
+            `Cloudinary delete permanently failed for "${record.publicId}" after ${MAX_RETRY} retries`
           );
         }
       }

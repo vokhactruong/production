@@ -87,14 +87,19 @@ export default function Profile() {
       pendingPublicIdRef.current = null;
       if (accessToken) {
         setAuth(
-          { ...user, firstName: updated.firstName, lastName: updated.lastName, avatar: updated.avatar ?? undefined },
-          accessToken,
+          {
+            ...user,
+            firstName: updated.firstName,
+            lastName: updated.lastName,
+            avatar: updated.avatar ?? undefined,
+          },
+          accessToken
         );
       }
       emitToast("Cập nhật hồ sơ thành công", "success");
     } catch (err) {
       const msg = axios.isAxiosError(err)
-        ? (err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra"
+        ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
         : "Có lỗi xảy ra";
       emitToast(msg, "error");
     } finally {
@@ -115,7 +120,11 @@ export default function Profile() {
           <div className="relative flex-shrink-0">
             {avatar ? (
               <>
-                <img src={avatar} alt={user.firstName} className="h-20 w-20 rounded-full object-cover" />
+                <img
+                  src={avatar}
+                  alt={user.firstName}
+                  className="h-20 w-20 rounded-full object-cover"
+                />
                 {!isUploading && (
                   <button
                     type="button"
@@ -171,7 +180,10 @@ export default function Profile() {
             <p className="mt-0.5 text-xs text-slate-400">JPG, PNG, WebP, GIF · Tối đa 5MB</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {user.roles.map((r) => (
-                <span key={r} className="rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                <span
+                  key={r}
+                  className="rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+                >
                   {r}
                 </span>
               ))}
@@ -215,7 +227,10 @@ export default function Profile() {
         <h3 className="font-semibold text-slate-900 mb-4">Danh sách quyền hạn</h3>
         <div className="flex flex-wrap gap-1.5">
           {user.permissions.map((p) => (
-            <span key={p} className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-600">
+            <span
+              key={p}
+              className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-600"
+            >
               {p}
             </span>
           ))}

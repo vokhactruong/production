@@ -29,10 +29,16 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (!token) { setHydrating(false); return; }
+    if (!token) {
+      setHydrating(false);
+      return;
+    }
     authApi
       .me()
-      .then((res) => { const user = getData<AuthUser>(res); setAuth(user, token); })
+      .then((res) => {
+        const user = getData<AuthUser>(res);
+        setAuth(user, token);
+      })
       .catch(() => clearAuth())
       .finally(() => setHydrating(false));
   }, []);
@@ -47,7 +53,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function PermissionRoute({ permission, children }: { permission: string; children: React.ReactNode }) {
+function PermissionRoute({
+  permission,
+  children,
+}: {
+  permission: string;
+  children: React.ReactNode;
+}) {
   const { isAuthenticated, hasPermission } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!hasPermission(permission)) return <Navigate to="/dashboard" replace />;
@@ -66,24 +78,114 @@ export default function App() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <PublicRoute>
+                <ResetPassword />
+              </PublicRoute>
+            }
+          />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Protected routes */}
-          <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/users" element={<PermissionRoute permission={PERMISSIONS.USER_READ}><Users /></PermissionRoute>} />
-            <Route path="/roles" element={<PermissionRoute permission={PERMISSIONS.ROLE_READ}><Roles /></PermissionRoute>} />
-            <Route path="/permissions" element={<PermissionRoute permission={PERMISSIONS.PERMISSION_READ}><Permissions /></PermissionRoute>} />
-            <Route path="/categories" element={<PermissionRoute permission={PERMISSIONS.CATEGORY_READ}><Categories /></PermissionRoute>} />
-            <Route path="/articles" element={<PermissionRoute permission={PERMISSIONS.ARTICLE_READ}><ArticleList /></PermissionRoute>} />
-            <Route path="/articles/new" element={<PermissionRoute permission={PERMISSIONS.ARTICLE_CREATE}><ArticleForm /></PermissionRoute>} />
-            <Route path="/articles/:id/edit" element={<PermissionRoute permission={PERMISSIONS.ARTICLE_UPDATE}><ArticleForm /></PermissionRoute>} />
-            <Route path="/articles/:id/preview" element={<PermissionRoute permission={PERMISSIONS.ARTICLE_READ}><ArticlePreview /></PermissionRoute>} />
+            <Route
+              path="/users"
+              element={
+                <PermissionRoute permission={PERMISSIONS.USER_READ}>
+                  <Users />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/roles"
+              element={
+                <PermissionRoute permission={PERMISSIONS.ROLE_READ}>
+                  <Roles />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/permissions"
+              element={
+                <PermissionRoute permission={PERMISSIONS.PERMISSION_READ}>
+                  <Permissions />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/categories"
+              element={
+                <PermissionRoute permission={PERMISSIONS.CATEGORY_READ}>
+                  <Categories />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/articles"
+              element={
+                <PermissionRoute permission={PERMISSIONS.ARTICLE_READ}>
+                  <ArticleList />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/articles/new"
+              element={
+                <PermissionRoute permission={PERMISSIONS.ARTICLE_CREATE}>
+                  <ArticleForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/articles/:id/edit"
+              element={
+                <PermissionRoute permission={PERMISSIONS.ARTICLE_UPDATE}>
+                  <ArticleForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/articles/:id/preview"
+              element={
+                <PermissionRoute permission={PERMISSIONS.ARTICLE_READ}>
+                  <ArticlePreview />
+                </PermissionRoute>
+              }
+            />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
           </Route>

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateArticleDto, UpdateArticleDto, ArticleQueryDto } from "./dto/article.dto";
 import { RequestUser } from "../auth/decorators/current-user.decorator";
@@ -13,11 +9,24 @@ import { nanoid } from "nanoid";
 import sanitizeHtml from "sanitize-html";
 
 const ALLOWED_TAGS = [
-  "p", "br", "h1", "h2", "h3", "h4",
-  "strong", "em", "u", "s",
-  "ul", "ol", "li",
-  "a", "img",
-  "blockquote", "code", "pre",
+  "p",
+  "br",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "strong",
+  "em",
+  "u",
+  "s",
+  "ul",
+  "ol",
+  "li",
+  "a",
+  "img",
+  "blockquote",
+  "code",
+  "pre",
 ];
 
 const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions["allowedAttributes"] = {
@@ -45,7 +54,10 @@ export class ArticlesService {
 
   private async generateSlug(title: string): Promise<string> {
     const base = slugify(title, { lower: true, strict: true, locale: "vi" });
-    const existing = await this.prisma.article.findUnique({ where: { slug: base }, select: { id: true } });
+    const existing = await this.prisma.article.findUnique({
+      where: { slug: base },
+      select: { id: true },
+    });
     return existing ? `${base}-${nanoid(6)}` : base;
   }
 
@@ -62,7 +74,13 @@ export class ArticlesService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.article.findMany({ where, include: ARTICLE_INCLUDE, skip, take: limit, orderBy: { createdAt: "desc" } }),
+      this.prisma.article.findMany({
+        where,
+        include: ARTICLE_INCLUDE,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
       this.prisma.article.count({ where }),
     ]);
 
@@ -70,7 +88,10 @@ export class ArticlesService {
   }
 
   async findOneAdmin(id: string, user: RequestUser) {
-    const article = await this.prisma.article.findUnique({ where: { id }, include: ARTICLE_INCLUDE });
+    const article = await this.prisma.article.findUnique({
+      where: { id },
+      include: ARTICLE_INCLUDE,
+    });
     if (!article) throw new NotFoundException("Bài viết không tồn tại");
 
     const canManageAll = user.permissions.includes("article.manage");
@@ -90,7 +111,13 @@ export class ArticlesService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.article.findMany({ where, include: ARTICLE_INCLUDE, skip, take: limit, orderBy: { publishedAt: "desc" } }),
+      this.prisma.article.findMany({
+        where,
+        include: ARTICLE_INCLUDE,
+        skip,
+        take: limit,
+        orderBy: { publishedAt: "desc" },
+      }),
       this.prisma.article.count({ where }),
     ]);
 
@@ -102,9 +129,13 @@ export class ArticlesService {
       where: { slug },
       include: ARTICLE_INCLUDE,
     });
-    if (!article || article.status !== "PUBLISHED") throw new NotFoundException("Bài viết không tồn tại");
+    if (!article || article.status !== "PUBLISHED")
+      throw new NotFoundException("Bài viết không tồn tại");
 
-    await this.prisma.article.update({ where: { id: article.id }, data: { viewCount: { increment: 1 } } });
+    await this.prisma.article.update({
+      where: { id: article.id },
+      data: { viewCount: { increment: 1 } },
+    });
     return { ...article, viewCount: article.viewCount + 1 };
   }
 
@@ -129,7 +160,12 @@ export class ArticlesService {
       include: ARTICLE_INCLUDE,
     });
 
-    await this.auditLogs.log({ userId: user.id, action: "CREATE", entity: "Article", entityId: article.id });
+    await this.auditLogs.log({
+      userId: user.id,
+      action: "CREATE",
+      entity: "Article",
+      entityId: article.id,
+    });
     return article;
   }
 
@@ -142,7 +178,10 @@ export class ArticlesService {
       existing.thumbnailPublicId &&
       dto.thumbnailPublicId !== existing.thumbnailPublicId
     ) {
-      await this.uploadService.deleteImage(existing.thumbnailPublicId, { entity: "Article", entityId: id });
+      await this.uploadService.deleteImage(existing.thumbnailPublicId, {
+        entity: "Article",
+        entityId: id,
+      });
     }
 
     const cleanContent = dto.content ? this.sanitize(dto.content) : undefined;
@@ -166,17 +205,30 @@ export class ArticlesService {
       include: ARTICLE_INCLUDE,
     });
 
-    await this.auditLogs.log({ userId: user.id, action: "UPDATE", entity: "Article", entityId: id });
+    await this.auditLogs.log({
+      userId: user.id,
+      action: "UPDATE",
+      entity: "Article",
+      entityId: id,
+    });
     return article;
   }
 
   async remove(id: string, user: RequestUser) {
     const article = await this.findOneAdmin(id, user);
     if (article.thumbnailPublicId) {
-      await this.uploadService.deleteImage(article.thumbnailPublicId, { entity: "Article", entityId: id });
+      await this.uploadService.deleteImage(article.thumbnailPublicId, {
+        entity: "Article",
+        entityId: id,
+      });
     }
     await this.prisma.article.delete({ where: { id } });
-    await this.auditLogs.log({ userId: user.id, action: "DELETE", entity: "Article", entityId: id });
+    await this.auditLogs.log({
+      userId: user.id,
+      action: "DELETE",
+      entity: "Article",
+      entityId: id,
+    });
     return { message: "Xóa bài viết thành công" };
   }
 
@@ -193,7 +245,12 @@ export class ArticlesService {
       include: ARTICLE_INCLUDE,
     });
 
-    await this.auditLogs.log({ userId: user.id, action: "PUBLISH", entity: "Article", entityId: id });
+    await this.auditLogs.log({
+      userId: user.id,
+      action: "PUBLISH",
+      entity: "Article",
+      entityId: id,
+    });
     return updated;
   }
 

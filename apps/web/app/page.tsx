@@ -6,7 +6,12 @@ async function getArticles() {
   try {
     const res = await fetch(`${API_URL}/articles/public?limit=6`, { next: { revalidate: 60 } });
     if (!res.ok) return { items: [], meta: { total: 0, page: 1, limit: 6, totalPages: 0 } };
-    const data = await res.json() as { data: { items: Article[]; meta: { total: number; page: number; limit: number; totalPages: number } } };
+    const data = (await res.json()) as {
+      data: {
+        items: Article[];
+        meta: { total: number; page: number; limit: number; totalPages: number };
+      };
+    };
     return data.data;
   } catch {
     return { items: [], meta: { total: 0, page: 1, limit: 6, totalPages: 0 } };
@@ -17,7 +22,7 @@ async function getCategories() {
   try {
     const res = await fetch(`${API_URL}/categories`, { next: { revalidate: 300 } });
     if (!res.ok) return [];
-    const data = await res.json() as { data: Category[] };
+    const data = (await res.json()) as { data: Category[] };
     return data.data;
   } catch {
     return [];
@@ -42,11 +47,18 @@ export default async function HomePage() {
         <section className="border-b border-slate-200 bg-white">
           <div className="mx-auto max-w-5xl px-6 py-4">
             <div className="flex flex-wrap gap-2">
-              <Link href="/tin-tuc" className="rounded-xl bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors">
+              <Link
+                href="/tin-tuc"
+                className="rounded-xl bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+              >
                 Tất cả
               </Link>
               {categories.map((cat) => (
-                <Link key={cat.id} href={`/danh-muc/${cat.slug}`} className="rounded-xl bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors">
+                <Link
+                  key={cat.id}
+                  href={`/danh-muc/${cat.slug}`}
+                  className="rounded-xl bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                >
                   {cat.name}
                 </Link>
               ))}
@@ -63,9 +75,16 @@ export default async function HomePage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {articlesData.items.map((article) => (
-              <article key={article.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-md transition-shadow">
+              <article
+                key={article.id}
+                className="rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-md transition-shadow"
+              >
                 {article.thumbnail && (
-                  <img src={article.thumbnail} alt={article.title} className="h-48 w-full object-cover" />
+                  <img
+                    src={article.thumbnail}
+                    alt={article.title}
+                    className="h-48 w-full object-cover"
+                  />
                 )}
                 <div className="p-5">
                   {article.category && (
@@ -73,11 +92,16 @@ export default async function HomePage() {
                       {article.category.name}
                     </span>
                   )}
-                  <h3 className="mt-2 font-semibold text-slate-900 line-clamp-2">{article.title}</h3>
+                  <h3 className="mt-2 font-semibold text-slate-900 line-clamp-2">
+                    {article.title}
+                  </h3>
                   {article.excerpt && (
                     <p className="mt-1 text-sm text-slate-500 line-clamp-2">{article.excerpt}</p>
                   )}
-                  <Link href={`/bai-viet/${article.slug}`} className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline">
+                  <Link
+                    href={`/bai-viet/${article.slug}`}
+                    className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline"
+                  >
                     Đọc thêm →
                   </Link>
                 </div>

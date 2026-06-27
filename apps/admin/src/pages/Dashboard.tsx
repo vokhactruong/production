@@ -4,7 +4,17 @@ import { Users, FileText, Tag, Shield, Key } from "lucide-react";
 import { dashboardApi } from "../api/client";
 import { cn, formatDate } from "../utils";
 
-function StatCard({ title, value, icon: Icon, color }: { title: string; value: number; icon: React.ElementType; color: string }) {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+}: {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  color: string;
+}) {
   return (
     <div className="rounded-2xl bg-white border border-slate-200 p-6">
       <div className="flex items-center justify-between">
@@ -49,7 +59,12 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats?.userCount !== null && stats?.userCount !== undefined && (
-          <StatCard title="Tổng người dùng" value={stats.userCount} icon={Users} color="bg-blue-500" />
+          <StatCard
+            title="Tổng người dùng"
+            value={stats.userCount}
+            icon={Users}
+            color="bg-blue-500"
+          />
         )}
         {stats?.roleCount !== null && stats?.roleCount !== undefined && (
           <StatCard title="Vai trò" value={stats.roleCount} icon={Shield} color="bg-indigo-500" />
@@ -61,7 +76,12 @@ export default function Dashboard() {
           <StatCard title="Danh mục" value={stats.catCount} icon={Tag} color="bg-green-500" />
         )}
         {stats?.recentArticles !== null && stats?.recentArticles !== undefined && (
-          <StatCard title="Bài viết gần đây" value={stats.recentArticles.length} icon={FileText} color="bg-orange-500" />
+          <StatCard
+            title="Bài viết gần đây"
+            value={stats.recentArticles.length}
+            icon={FileText}
+            color="bg-orange-500"
+          />
         )}
       </div>
 
@@ -74,28 +94,45 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tiêu đề</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Trạng thái</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tác giả</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Ngày tạo</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Tiêu đề
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Tác giả
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Ngày tạo
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {stats.recentArticles.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400">Không có dữ liệu</td>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                      Không có dữ liệu
+                    </td>
                   </tr>
                 ) : (
                   stats.recentArticles.map((article) => (
                     <tr key={article.id} className="hover:bg-slate-50">
                       <td className="px-6 py-3 font-medium text-slate-900">{article.title}</td>
                       <td className="px-6 py-3">
-                        <span className={cn("inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-medium", STATUS_BADGE[article.status])}>
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-medium",
+                            STATUS_BADGE[article.status]
+                          )}
+                        >
                           {STATUS_LABEL[article.status]}
                         </span>
                       </td>
                       <td className="px-6 py-3 text-slate-600">
-                        {article.author ? `${article.author.firstName} ${article.author.lastName}` : "—"}
+                        {article.author
+                          ? `${article.author.firstName} ${article.author.lastName}`
+                          : "—"}
                       </td>
                       <td className="px-6 py-3 text-slate-500">{formatDate(article.createdAt)}</td>
                     </tr>

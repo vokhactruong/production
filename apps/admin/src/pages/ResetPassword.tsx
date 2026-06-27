@@ -15,14 +15,19 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) { emitToast("Token không hợp lệ", "error"); return; }
+    if (!token) {
+      emitToast("Token không hợp lệ", "error");
+      return;
+    }
     setLoading(true);
     try {
       await authApi.resetPassword({ token, password });
       emitToast("Đặt lại mật khẩu thành công", "success");
       navigate("/login");
     } catch (err) {
-      const msg = axios.isAxiosError(err) ? (err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra" : "Có lỗi xảy ra";
+      const msg = axios.isAxiosError(err)
+        ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
+        : "Có lỗi xảy ra";
       emitToast(msg, "error");
     } finally {
       setLoading(false);
@@ -38,10 +43,24 @@ export default function ResetPassword() {
         <div className="rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Mật khẩu mới</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} placeholder="Min8!Aa1" className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="Min8!Aa1"
+                className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-            <button type="submit" disabled={loading} className="h-10 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-10 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
               {loading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
             </button>
           </form>

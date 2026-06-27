@@ -29,7 +29,10 @@ export class RolesService {
   ) {}
 
   async findAll() {
-    const roles = await this.prisma.role.findMany({ select: ROLE_SELECT, orderBy: { createdAt: "asc" } });
+    const roles = await this.prisma.role.findMany({
+      select: ROLE_SELECT,
+      orderBy: { createdAt: "asc" },
+    });
     return roles.map(this.formatRole);
   }
 
@@ -43,8 +46,16 @@ export class RolesService {
     const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
     if (existing) throw new ConflictException("Tên vai trò đã tồn tại");
 
-    const role = await this.prisma.role.create({ data: { name: dto.name, description: dto.description }, select: ROLE_SELECT });
-    await this.auditLogs.log({ userId: actorId, action: "CREATE", entity: "Role", entityId: role.id });
+    const role = await this.prisma.role.create({
+      data: { name: dto.name, description: dto.description },
+      select: ROLE_SELECT,
+    });
+    await this.auditLogs.log({
+      userId: actorId,
+      action: "CREATE",
+      entity: "Role",
+      entityId: role.id,
+    });
     return this.formatRole(role);
   }
 
@@ -89,7 +100,12 @@ export class RolesService {
       }
     });
 
-    await this.auditLogs.log({ userId: actorId, action: "ASSIGN_PERMISSIONS", entity: "Role", entityId: id });
+    await this.auditLogs.log({
+      userId: actorId,
+      action: "ASSIGN_PERMISSIONS",
+      entity: "Role",
+      entityId: id,
+    });
     return this.findOne(id);
   }
 
@@ -101,7 +117,9 @@ export class RolesService {
     createdAt: Date;
     updatedAt: Date;
     _count: { userRoles: number };
-    rolePermissions: { permission: { id: string; name: string; code: string; description: string | null } }[];
+    rolePermissions: {
+      permission: { id: string; name: string; code: string; description: string | null };
+    }[];
   }) {
     return {
       id: role.id,
