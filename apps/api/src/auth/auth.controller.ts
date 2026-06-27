@@ -11,10 +11,10 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
+import { GoogleAuthGuard } from "./guards/google-auth.guard";
 import { Throttle } from "@nestjs/throttler";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { Response, Request } from "express";
-import * as crypto from "crypto";
 import { AuthService } from "./auth.service";
 import { RegisterDto, LoginDto } from "./dto/auth.dto";
 import { Public } from "./decorators/public.decorator";
@@ -88,17 +88,10 @@ export class AuthController {
 
   @Public()
   @Get("google")
-  @UseGuards(PassportAuthGuard("google"))
+  @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: "Đăng nhập với Google" })
-  async googleAuth(@Req() req: Request, @Res() res: Response) {
-    const state = crypto.randomBytes(32).toString("hex");
-    res.cookie("oauth_state", state, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 10 * 60 * 1000,
-    });
-    return res.redirect(`/auth/google?state=${state}`);
+  async googleAuth() {
+    // Passport redirects to Google — this body never executes
   }
 
   @Public()

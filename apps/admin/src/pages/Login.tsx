@@ -110,7 +110,10 @@ export default function Login() {
           </form>
 
           <div className="mt-4 text-center">
-            <a href="/auth/google" className="text-sm text-blue-600 hover:underline">
+            <a
+              href={`${import.meta.env.VITE_API_URL ?? "http://localhost:3001"}/auth/google`}
+              className="text-sm text-blue-600 hover:underline"
+            >
               Đăng nhập với Google
             </a>
           </div>
