@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authApi, getData } from "../api/client";
 import { useAuthStore } from "../store/auth.store";

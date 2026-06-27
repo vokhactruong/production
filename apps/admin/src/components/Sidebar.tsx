@@ -1,4 +1,3 @@
-import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -16,7 +15,6 @@ import {
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
 import { authApi } from "../api/client";
-import { useToast } from "./Toast";
 import { PERMISSIONS } from "../constants/permissions";
 
 const MENU = [
@@ -34,8 +32,6 @@ export default function Sidebar() {
   const { hasPermission, clearAuth, user } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const navigate = useNavigate();
-  const { emitToast } = useToast();
-
   const handleLogout = async () => {
     try {
       await authApi.logout();

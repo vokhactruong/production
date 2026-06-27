@@ -1,4 +1,3 @@
-import React from "react";
 import { useUIStore } from "../store/auth.store";
 import { Sun, Moon } from "lucide-react";
 import { cn } from "../utils";

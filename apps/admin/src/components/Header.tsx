@@ -1,4 +1,3 @@
-import React from "react";
 import { useLocation } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { useAuthStore } from "../store/auth.store";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, ShieldCheck } from "lucide-react";
 import { rolesApi, permissionsApi, getData } from "../api/client";
@@ -109,7 +109,7 @@ export default function Roles() {
               </div>
             </div>
             <div className="mt-4 flex gap-4 text-sm text-slate-500">
-              <span>{role.userCount ?? 0} người dùng</span>
+              <span>{role._count?.userRoles ?? 0} người dùng</span>
               <span>{role.permissions?.length ?? 0} quyền</span>
             </div>
             <div className="mt-4 flex gap-2">
