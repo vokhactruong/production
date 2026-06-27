@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "turbo run dev",
-    "build": "turbo run build",
+    "build": "turbo run build --filter=@school/api",
+    "start": "pnpm --filter @school/database db:migrate:prod && node apps/api/dist/main.js",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
