@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["corepack enable && pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm turbo run build --filter=@school/api"]
+
+[start]
+cmd = "cd apps/api && pnpm prisma migrate deploy && node dist/main.js"
