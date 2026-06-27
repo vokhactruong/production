@@ -1,0 +1,4 @@
+#!/bin/sh
+
+pnpm type-check || exit 1
+pnpm prettier --check . || exit 1
