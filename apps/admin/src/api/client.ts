@@ -141,6 +141,16 @@ export const uploadApi = {
 
 export const auditLogsApi = {
   getAll: (p?: unknown) => api.get("/audit-logs", { params: p }),
+  getForEntity: (entity: string, entityId: string, p?: Record<string, unknown>) =>
+    api.get("/audit-logs", { params: { entity, entityId, ...p } }),
+};
+
+export const studentsApi = {
+  getAll: (p?: unknown) => api.get("/students", { params: p }),
+  getOne: (id: string) => api.get(`/students/${id}`),
+  create: (d: unknown) => api.post("/students", d),
+  update: (id: string, d: unknown) => api.patch(`/students/${id}`, d),
+  delete: (id: string) => api.delete(`/students/${id}`),
 };
 
 export interface DashboardStats {

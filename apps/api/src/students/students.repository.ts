@@ -4,6 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 
 const STUDENT_SELECT = {
   id: true,
+  code: true,
   firstName: true,
   lastName: true,
   dateOfBirth: true,

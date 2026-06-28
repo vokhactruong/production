@@ -23,6 +23,9 @@ import ArticleForm from "./pages/articles/ArticleForm";
 import ArticlePreview from "./pages/articles/ArticlePreview";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Students from "./pages/Students";
+import StudentDetail from "./pages/students/StudentDetail";
+import StudentForm from "./pages/students/StudentForm";
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isHydrating, setHydrating, setAuth, clearAuth } = useAuthStore();
@@ -183,6 +186,38 @@ export default function App() {
               element={
                 <PermissionRoute permission={PERMISSIONS.ARTICLE_READ}>
                   <ArticlePreview />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/students"
+              element={
+                <PermissionRoute permission={PERMISSIONS.STUDENT_READ}>
+                  <Students />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/students/:id"
+              element={
+                <PermissionRoute permission={PERMISSIONS.STUDENT_READ}>
+                  <StudentDetail />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/students/new"
+              element={
+                <PermissionRoute permission={PERMISSIONS.STUDENT_CREATE}>
+                  <StudentForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/students/:id/edit"
+              element={
+                <PermissionRoute permission={PERMISSIONS.STUDENT_UPDATE}>
+                  <StudentForm />
                 </PermissionRoute>
               }
             />

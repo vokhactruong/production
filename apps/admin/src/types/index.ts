@@ -14,4 +14,7 @@ export type {
   AuditLog,
   UserStats,
   UserStatus,
+  Student,
+  StudentStatus,
+  Gender,
 } from "@school/types";

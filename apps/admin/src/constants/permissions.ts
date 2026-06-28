@@ -22,4 +22,8 @@ export const PERMISSIONS = {
   CATEGORY_DELETE: "category.delete",
   UPLOAD_FILE: "upload.file",
   PROFILE_UPDATE: "profile.update",
+  STUDENT_READ: "student.read",
+  STUDENT_CREATE: "student.create",
+  STUDENT_UPDATE: "student.update",
+  STUDENT_DELETE: "student.delete",
 } as const;

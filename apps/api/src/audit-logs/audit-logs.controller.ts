@@ -21,6 +21,14 @@ class AuditLogQueryDto {
   @IsNumber()
   @Min(1)
   limit?: number = 20;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  entity?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  entityId?: string;
 }
 
 @ApiTags("Audit Logs")

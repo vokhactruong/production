@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { CreateStudentDto, StudentQueryDto, UpdateStudentDto } from "./dto/student.dto";
 import { StudentsRepository } from "./students.repository";
@@ -6,6 +7,7 @@ import { StudentsRepository } from "./students.repository";
 @Injectable()
 export class StudentsService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly studentsRepository: StudentsRepository,
     private readonly auditLogs: AuditLogsService
   ) {}
@@ -56,6 +58,17 @@ export class StudentsService {
     return student;
   }
 
+  private async generateCode(): Promise<string> {
+    const last = await this.prisma.student.findFirst({
+      where: { code: { not: null } },
+      select: { code: true },
+      orderBy: { createdAt: "desc" },
+    });
+    const lastNum = last?.code ? parseInt(last.code.replace("HS-", ""), 10) : 0;
+    const next = isNaN(lastNum) ? 1 : lastNum + 1;
+    return `HS-${String(next).padStart(3, "0")}`;
+  }
+
   async create(dto: CreateStudentDto, actorId?: string) {
     if (dto.email) {
       const existing = await this.studentsRepository.findByEmail(dto.email);
@@ -67,7 +80,10 @@ export class StudentsService {
       if (existing) throw new ConflictException("Số điện thoại đã được sử dụng");
     }
 
+    const code = await this.generateCode();
+
     const student = await this.studentsRepository.create({
+      code,
       firstName: dto.firstName,
       lastName: dto.lastName,
       dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
@@ -78,6 +94,7 @@ export class StudentsService {
       guardianName: dto.guardianName,
       guardianPhone: dto.guardianPhone,
       guardianEmail: dto.guardianEmail,
+      status: dto.status,
       notes: dto.notes,
     });
 

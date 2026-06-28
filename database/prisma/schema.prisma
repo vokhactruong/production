@@ -171,6 +171,7 @@ model Article {
 
 model Student {
   id            String        @id @default(cuid())
+  code          String?       @unique
   firstName     String
   lastName      String
   dateOfBirth   DateTime?

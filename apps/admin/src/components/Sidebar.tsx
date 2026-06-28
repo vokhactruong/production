@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
+  GraduationCap,
   Shield,
   Key,
   Tag,
@@ -25,6 +26,12 @@ const MENU = [
     permission: PERMISSIONS.DASHBOARD_VIEW,
   },
   { href: "/users", icon: Users, label: "Người dùng", permission: PERMISSIONS.USER_READ },
+  {
+    href: "/students",
+    icon: GraduationCap,
+    label: "Học sinh",
+    permission: PERMISSIONS.STUDENT_READ,
+  },
   { href: "/roles", icon: Shield, label: "Vai trò", permission: PERMISSIONS.ROLE_READ },
   { href: "/permissions", icon: Key, label: "Quyền hạn", permission: PERMISSIONS.PERMISSION_READ },
   { href: "/categories", icon: Tag, label: "Danh mục", permission: PERMISSIONS.CATEGORY_READ },

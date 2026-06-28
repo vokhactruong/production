@@ -27,6 +27,10 @@ const PERMISSIONS_SEED = [
   { name: "Delete Category", code: "category.delete", description: "Xóa danh mục" },
   { name: "Upload File", code: "upload.file", description: "Upload file" },
   { name: "Update Profile", code: "profile.update", description: "Cập nhật hồ sơ" },
+  { name: "Read Student", code: "student.read", description: "Xem học sinh" },
+  { name: "Create Student", code: "student.create", description: "Tạo học sinh" },
+  { name: "Update Student", code: "student.update", description: "Sửa học sinh" },
+  { name: "Delete Student", code: "student.delete", description: "Xóa học sinh" },
 ];
 
 const ROLES_SEED = [
@@ -63,6 +67,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "category.delete",
     "upload.file",
     "profile.update",
+    "student.read",
+    "student.create",
+    "student.update",
+    "student.delete",
   ],
   Admin: [
     "dashboard.view",
@@ -88,6 +96,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "category.delete",
     "upload.file",
     "profile.update",
+    "student.read",
+    "student.create",
+    "student.update",
+    "student.delete",
   ],
   Editor: [
     "dashboard.view",

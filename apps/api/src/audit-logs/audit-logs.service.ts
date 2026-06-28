@@ -28,18 +28,24 @@ export class AuditLogsService {
     });
   }
 
-  async findAll(query: { page?: number; limit?: number }) {
+  async findAll(query: { page?: number; limit?: number; entity?: string; entityId?: string }) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
+    const where = {
+      ...(query.entity && { entity: query.entity }),
+      ...(query.entityId && { entityId: query.entityId }),
+    };
+
     const [items, total] = await Promise.all([
       this.prisma.auditLog.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      this.prisma.auditLog.count(),
+      this.prisma.auditLog.count({ where }),
     ]);
 
     return { items, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };

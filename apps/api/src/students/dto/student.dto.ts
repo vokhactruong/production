@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsDateString,
+  MaxLength,
   Min,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
@@ -15,11 +16,13 @@ export class CreateStudentDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   firstName!: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   lastName!: string;
 
   @ApiPropertyOptional()
@@ -35,6 +38,7 @@ export class CreateStudentDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(20)
   phone?: string;
 
   @ApiPropertyOptional()
@@ -45,80 +49,19 @@ export class CreateStudentDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   address?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   guardianName?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  guardianPhone?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsEmail()
-  guardianEmail?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
-
-export class UpdateStudentDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  firstName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  lastName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  dateOfBirth?: string;
-
-  @ApiPropertyOptional({ enum: ["MALE", "FEMALE", "OTHER"] })
-  @IsOptional()
-  @IsEnum(["MALE", "FEMALE", "OTHER"])
-  gender?: "MALE" | "FEMALE" | "OTHER";
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  address?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  guardianName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
+  @MaxLength(20)
   guardianPhone?: string;
 
   @ApiPropertyOptional()
@@ -134,6 +77,83 @@ export class UpdateStudentDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
+  notes?: string;
+}
+
+export class UpdateStudentDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  firstName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  lastName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string;
+
+  @ApiPropertyOptional({ enum: ["MALE", "FEMALE", "OTHER"] })
+  @IsOptional()
+  @IsEnum(["MALE", "FEMALE", "OTHER"])
+  gender?: "MALE" | "FEMALE" | "OTHER";
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  guardianName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  guardianPhone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  guardianEmail?: string;
+
+  @ApiPropertyOptional({ enum: ["ACTIVE", "INACTIVE", "SUSPENDED"] })
+  @IsOptional()
+  @IsEnum(["ACTIVE", "INACTIVE", "SUSPENDED"])
+  status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
   notes?: string;
 }
 

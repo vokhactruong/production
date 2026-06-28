@@ -141,6 +141,31 @@ export interface AuditLog {
   user?: Pick<User, "id" | "firstName" | "lastName" | "email">;
 }
 
+// ─── Student ──────────────────────────────────────────────────────────────────
+
+export type StudentStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+export type Gender = "MALE" | "FEMALE" | "OTHER";
+
+export interface Student {
+  id: string;
+  code?: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  phone?: string;
+  email?: string;
+  avatar?: string;
+  address?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  status: StudentStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 export interface UserStats {
