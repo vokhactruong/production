@@ -11,12 +11,14 @@ interface LogParams {
   metadata?: Prisma.InputJsonValue;
 }
 
+type Tx = Prisma.TransactionClient;
+
 @Injectable()
 export class AuditLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async log(params: LogParams) {
-    await this.prisma.auditLog.create({
+  async log(params: LogParams, tx?: Tx) {
+    await (tx ?? this.prisma).auditLog.create({
       data: {
         userId: params.userId,
         action: params.action,

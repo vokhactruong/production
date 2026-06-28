@@ -124,16 +124,15 @@ export class StudentsService {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const student = await this.studentsRepository.create({
-          ...data,
-          code: await this.generateCode(),
-        });
+        const code = await this.generateCode();
 
-        await this.auditLogs.log({
-          userId: actorId,
-          action: "CREATE",
-          entity: "Student",
-          entityId: student.id,
+        const student = await this.prisma.$transaction(async (tx) => {
+          const created = await this.studentsRepository.create({ ...data, code }, tx);
+          await this.auditLogs.log(
+            { userId: actorId, action: "CREATE", entity: "Student", entityId: created.id },
+            tx
+          );
+          return created;
         });
 
         return student;
@@ -144,25 +143,17 @@ export class StudentsService {
           Array.isArray(err.meta?.target) &&
           (err.meta.target as string[]).includes("code");
 
-        if (isCodeConflict && attempt < MAX_RETRIES) {
-          continue;
-        }
-
-        if (isCodeConflict) {
+        if (isCodeConflict && attempt < MAX_RETRIES) continue;
+        if (isCodeConflict)
           throw new InternalServerErrorException("Không thể tạo mã học sinh. Vui lòng thử lại.");
-        }
-
         throw err;
       }
     }
 
-    // Unreachable — all branches inside the loop either return or throw
     throw new InternalServerErrorException("Không thể tạo mã học sinh. Vui lòng thử lại.");
   }
 
   async update(id: string, dto: UpdateStudentDto, actorId?: string) {
-    await this.findOne(id);
-
     if (dto.email) {
       const existing = await this.studentsRepository.findByEmail(dto.email, id);
       if (existing) throw new ConflictException("Email đã được sử dụng");
@@ -173,43 +164,53 @@ export class StudentsService {
       if (existing) throw new ConflictException("Số điện thoại đã được sử dụng");
     }
 
-    const student = await this.studentsRepository.update(id, {
-      ...(dto.firstName !== undefined && { firstName: dto.firstName }),
-      ...(dto.lastName !== undefined && { lastName: dto.lastName }),
-      ...(dto.dateOfBirth !== undefined && {
-        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
-      }),
-      ...(dto.gender !== undefined && { gender: dto.gender }),
-      ...(dto.phone !== undefined && { phone: dto.phone }),
-      ...(dto.email !== undefined && { email: dto.email }),
-      ...(dto.avatar !== undefined && { avatar: dto.avatar }),
-      ...(dto.address !== undefined && { address: dto.address }),
-      ...(dto.guardianName !== undefined && { guardianName: dto.guardianName }),
-      ...(dto.guardianPhone !== undefined && { guardianPhone: dto.guardianPhone }),
-      ...(dto.guardianEmail !== undefined && { guardianEmail: dto.guardianEmail }),
-      ...(dto.status !== undefined && { status: dto.status }),
-      ...(dto.notes !== undefined && { notes: dto.notes }),
-    });
+    const student = await this.prisma.$transaction(async (tx) => {
+      const existing = await this.studentsRepository.findById(id, tx);
+      if (!existing) throw new NotFoundException("Học sinh không tồn tại");
 
-    await this.auditLogs.log({
-      userId: actorId,
-      action: "UPDATE",
-      entity: "Student",
-      entityId: id,
+      const updated = await this.studentsRepository.update(
+        id,
+        {
+          ...(dto.firstName !== undefined && { firstName: dto.firstName }),
+          ...(dto.lastName !== undefined && { lastName: dto.lastName }),
+          ...(dto.dateOfBirth !== undefined && {
+            dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
+          }),
+          ...(dto.gender !== undefined && { gender: dto.gender }),
+          ...(dto.phone !== undefined && { phone: dto.phone }),
+          ...(dto.email !== undefined && { email: dto.email }),
+          ...(dto.avatar !== undefined && { avatar: dto.avatar }),
+          ...(dto.address !== undefined && { address: dto.address }),
+          ...(dto.guardianName !== undefined && { guardianName: dto.guardianName }),
+          ...(dto.guardianPhone !== undefined && { guardianPhone: dto.guardianPhone }),
+          ...(dto.guardianEmail !== undefined && { guardianEmail: dto.guardianEmail }),
+          ...(dto.status !== undefined && { status: dto.status }),
+          ...(dto.notes !== undefined && { notes: dto.notes }),
+        },
+        tx
+      );
+
+      await this.auditLogs.log(
+        { userId: actorId, action: "UPDATE", entity: "Student", entityId: id },
+        tx
+      );
+
+      return updated;
     });
 
     return student;
   }
 
   async remove(id: string, actorId?: string) {
-    await this.findOne(id);
-    await this.studentsRepository.softDelete(id);
+    await this.prisma.$transaction(async (tx) => {
+      const existing = await this.studentsRepository.findById(id, tx);
+      if (!existing) throw new NotFoundException("Học sinh không tồn tại");
 
-    await this.auditLogs.log({
-      userId: actorId,
-      action: "DELETE",
-      entity: "Student",
-      entityId: id,
+      await this.studentsRepository.softDelete(id, tx);
+      await this.auditLogs.log(
+        { userId: actorId, action: "DELETE", entity: "Student", entityId: id },
+        tx
+      );
     });
 
     return { message: "Xóa học sinh thành công" };

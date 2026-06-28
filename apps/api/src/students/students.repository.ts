@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
+type Tx = Prisma.TransactionClient;
+
 const STUDENT_SELECT = {
   id: true,
   code: true,
@@ -47,8 +49,8 @@ export class StudentsRepository {
     return this.prisma.student.count({ where });
   }
 
-  async findById(id: string): Promise<StudentRecord | null> {
-    return this.prisma.student.findFirst({
+  async findById(id: string, tx?: Tx): Promise<StudentRecord | null> {
+    return (tx ?? this.prisma).student.findFirst({
       where: { id, deletedAt: null },
       select: STUDENT_SELECT,
     });
@@ -68,16 +70,16 @@ export class StudentsRepository {
     });
   }
 
-  async create(data: Prisma.StudentCreateInput): Promise<StudentRecord> {
-    return this.prisma.student.create({ data, select: STUDENT_SELECT });
+  async create(data: Prisma.StudentCreateInput, tx?: Tx): Promise<StudentRecord> {
+    return (tx ?? this.prisma).student.create({ data, select: STUDENT_SELECT });
   }
 
-  async update(id: string, data: Prisma.StudentUpdateInput): Promise<StudentRecord> {
-    return this.prisma.student.update({ where: { id }, data, select: STUDENT_SELECT });
+  async update(id: string, data: Prisma.StudentUpdateInput, tx?: Tx): Promise<StudentRecord> {
+    return (tx ?? this.prisma).student.update({ where: { id }, data, select: STUDENT_SELECT });
   }
 
-  async softDelete(id: string): Promise<void> {
-    await this.prisma.student.update({
+  async softDelete(id: string, tx?: Tx): Promise<void> {
+    await (tx ?? this.prisma).student.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
