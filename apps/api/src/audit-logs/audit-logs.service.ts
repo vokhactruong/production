@@ -44,6 +44,9 @@ export class AuditLogsService {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
       }),
       this.prisma.auditLog.count({ where }),
     ]);

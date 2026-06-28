@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Pencil,
@@ -256,13 +256,19 @@ function GuardianTab({ student }: { student: Student }) {
   );
 }
 
+const PAGE_SIZE = 10;
+
 function ActivityTab({ studentId }: { studentId: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["audit-logs", "Student", studentId],
-    queryFn: () => auditLogsApi.getForEntity("Student", studentId, { limit: 50 }),
+  const [limit, setLimit] = useState(PAGE_SIZE);
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["audit-logs", "Student", studentId, limit],
+    queryFn: () => auditLogsApi.getForEntity("Student", studentId, { limit }),
+    placeholderData: keepPreviousData,
   });
 
   const logs = data ? getList<AuditLog>(data) : null;
+  const hasMore = logs ? logs.meta.total > limit : false;
 
   if (isLoading) {
     return (
@@ -322,6 +328,7 @@ function ActivityTab({ studentId }: { studentId: string }) {
               Icon: Activity,
             };
             const { Icon } = cfg;
+            const actorName = log.user ? `${log.user.firstName} ${log.user.lastName}` : "Hệ thống";
 
             return (
               <div key={log.id} className="flex items-start gap-4 py-3">
@@ -345,13 +352,29 @@ function ActivityTab({ studentId }: { studentId: string }) {
                     </span>
                     <span className="text-xs text-slate-500">hồ sơ học sinh</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">{formatDateTime(log.createdAt)}</p>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-slate-600">{actorName}</span>
+                    <span className="text-xs text-slate-300">·</span>
+                    <span className="text-xs text-slate-400">{formatDateTime(log.createdAt)}</span>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {hasMore && (
+        <div className="border-t border-slate-100 px-5 py-3 text-center">
+          <button
+            onClick={() => setLimit((l) => l + PAGE_SIZE)}
+            disabled={isFetching}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700 disabled:text-slate-400 transition-colors"
+          >
+            {isFetching ? "Đang tải..." : `Tải thêm · còn ${logs.meta.total - limit} sự kiện`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -369,7 +392,7 @@ export default function StudentDetail() {
     enabled: Boolean(id),
   });
 
-  const student = data ? getData<Student>(data) : null;
+  const student = useMemo(() => (data ? getData<Student>(data) : null), [data]);
 
   if (isLoading) return <DetailSkeleton />;
 

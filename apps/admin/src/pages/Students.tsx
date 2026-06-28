@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -156,6 +156,49 @@ function DeleteDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the cancel button on open; restore focus to trigger element on close.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    cancelBtnRef.current?.focus();
+    return () => {
+      previouslyFocused?.focus();
+    };
+  }, []);
+
+  // Escape closes the dialog; Tab is trapped within it.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (!isPending) onCancel();
+        return;
+      }
+      if (e.key === "Tab") {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const focusable = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isPending, onCancel]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
       {/* Backdrop */}
@@ -166,6 +209,7 @@ function DeleteDialog({
 
       {/* Dialog */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-dialog-title"
@@ -174,7 +218,7 @@ function DeleteDialog({
         {/* Header */}
         <div className="flex items-center gap-3 rounded-t-2xl bg-red-50 px-5 py-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-            <AlertTriangle className="h-[18px] w-[18px]" />
+            <AlertTriangle className="h-[18px] w-[18px]" aria-hidden="true" />
           </div>
           <div>
             <h3 id="delete-dialog-title" className="text-sm font-semibold text-slate-900">
@@ -204,6 +248,8 @@ function DeleteDialog({
         {/* Footer */}
         <div className="flex gap-2.5 px-5 pb-5">
           <button
+            ref={cancelBtnRef}
+            type="button"
             onClick={onCancel}
             disabled={isPending}
             className="flex-1 rounded-xl border border-slate-300 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
@@ -211,6 +257,7 @@ function DeleteDialog({
             Huỷ
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={isPending}
             className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
@@ -227,23 +274,49 @@ function DeleteDialog({
 
 export default function Students() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const { emitToast } = useToast();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("");
-  const [page, setPage] = useState(1);
+
+  // URL is the source of truth for query state
+  const search = searchParams.get("search") ?? "";
+  const status = searchParams.get("status") ?? "";
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+
+  // Local state drives the input immediately; debounced value commits to URL
+  const [inputValue, setInputValue] = useState(search);
+  const debouncedInput = useDebounce(inputValue, 400);
+
   const [deleteStudent, setDeleteStudent] = useState<Pick<
     Student,
     "id" | "firstName" | "lastName" | "code"
   > | null>(null);
 
-  const debouncedSearch = useDebounce(search, 400);
+  // Skip the initial mount so loading a URL with ?search=…&page=3 doesn't
+  // reset the page back to 1.
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (debouncedInput) next.set("search", debouncedInput);
+        else next.delete("search");
+        next.delete("page");
+        return next;
+      },
+      { replace: true }
+    );
+  }, [debouncedInput]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["students", debouncedSearch, status, page],
+    queryKey: ["students", search, status, page],
     queryFn: () =>
       studentsApi.getAll({
-        search: debouncedSearch || undefined,
+        search: search || undefined,
         status: status || undefined,
         page,
         limit: 10,
@@ -299,19 +372,24 @@ export default function Students() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Tìm theo tên, email, số điện thoại..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Tìm theo tên, mã HS, email, số điện thoại, phụ huynh..."
             className="h-10 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
           />
-          {search && (
+          {inputValue && (
             <button
               onClick={() => {
-                setSearch("");
-                setPage(1);
+                setInputValue("");
+                setSearchParams(
+                  (prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete("search");
+                    next.delete("page");
+                    return next;
+                  },
+                  { replace: true }
+                );
               }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-slate-400 hover:text-slate-600 transition-colors"
               aria-label="Xoá tìm kiếm"
@@ -323,8 +401,17 @@ export default function Students() {
         <select
           value={status}
           onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
+            const val = e.target.value;
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev);
+                if (val) next.set("status", val);
+                else next.delete("status");
+                next.delete("page");
+                return next;
+              },
+              { replace: true }
+            );
           }}
           className="h-10 rounded-xl border border-slate-300 bg-white px-3 pr-8 text-sm text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
         >
@@ -398,9 +485,8 @@ export default function Students() {
                       {isFiltered && (
                         <button
                           onClick={() => {
-                            setSearch("");
-                            setStatus("");
-                            setPage(1);
+                            setInputValue("");
+                            setSearchParams({}, { replace: true });
                           }}
                           className="mt-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                         >
@@ -546,7 +632,14 @@ export default function Students() {
           totalPages={studentsData.meta.totalPages}
           total={studentsData.meta.total}
           limit={10}
-          onPageChange={setPage}
+          onPageChange={(p) =>
+            setSearchParams((prev) => {
+              const next = new URLSearchParams(prev);
+              if (p > 1) next.set("page", String(p));
+              else next.delete("page");
+              return next;
+            })
+          }
         />
       )}
 

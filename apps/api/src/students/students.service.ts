@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { CreateStudentDto, StudentQueryDto, UpdateStudentDto } from "./dto/student.dto";
@@ -11,6 +17,32 @@ export class StudentsService {
     private readonly studentsRepository: StudentsRepository,
     private readonly auditLogs: AuditLogsService
   ) {}
+
+  private buildSearchConditions(search: string): Prisma.StudentWhereInput[] {
+    const mode = "insensitive" as const;
+    const conditions: Prisma.StudentWhereInput[] = [
+      { code: { contains: search, mode } },
+      { firstName: { contains: search, mode } },
+      { lastName: { contains: search, mode } },
+      { email: { contains: search, mode } },
+      { phone: { contains: search, mode } },
+      { guardianName: { contains: search, mode } },
+      { guardianPhone: { contains: search, mode } },
+    ];
+
+    // "Nguyen An" → match firstName contains "Nguyen" AND lastName contains "An"
+    const parts = search.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      conditions.push({
+        AND: [
+          { firstName: { contains: parts[0], mode } },
+          { lastName: { contains: parts.slice(1).join(" "), mode } },
+        ],
+      });
+    }
+
+    return conditions;
+  }
 
   async findAll(query: StudentQueryDto) {
     const {
@@ -26,14 +58,7 @@ export class StudentsService {
     const where = {
       deletedAt: null,
       ...(status && { status }),
-      ...(search && {
-        OR: [
-          { firstName: { contains: search, mode: "insensitive" as const } },
-          { lastName: { contains: search, mode: "insensitive" as const } },
-          { email: { contains: search, mode: "insensitive" as const } },
-          { phone: { contains: search, mode: "insensitive" as const } },
-        ],
-      }),
+      ...(search && { OR: this.buildSearchConditions(search) }),
     };
 
     const [items, total] = await Promise.all([
@@ -80,10 +105,7 @@ export class StudentsService {
       if (existing) throw new ConflictException("Số điện thoại đã được sử dụng");
     }
 
-    const code = await this.generateCode();
-
-    const student = await this.studentsRepository.create({
-      code,
+    const data: Prisma.StudentCreateInput = {
       firstName: dto.firstName,
       lastName: dto.lastName,
       dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
@@ -96,16 +118,46 @@ export class StudentsService {
       guardianEmail: dto.guardianEmail,
       status: dto.status,
       notes: dto.notes,
-    });
+    };
 
-    await this.auditLogs.log({
-      userId: actorId,
-      action: "CREATE",
-      entity: "Student",
-      entityId: student.id,
-    });
+    const MAX_RETRIES = 5;
 
-    return student;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const student = await this.studentsRepository.create({
+          ...data,
+          code: await this.generateCode(),
+        });
+
+        await this.auditLogs.log({
+          userId: actorId,
+          action: "CREATE",
+          entity: "Student",
+          entityId: student.id,
+        });
+
+        return student;
+      } catch (err) {
+        const isCodeConflict =
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2002" &&
+          Array.isArray(err.meta?.target) &&
+          (err.meta.target as string[]).includes("code");
+
+        if (isCodeConflict && attempt < MAX_RETRIES) {
+          continue;
+        }
+
+        if (isCodeConflict) {
+          throw new InternalServerErrorException("Không thể tạo mã học sinh. Vui lòng thử lại.");
+        }
+
+        throw err;
+      }
+    }
+
+    // Unreachable — all branches inside the loop either return or throw
+    throw new InternalServerErrorException("Không thể tạo mã học sinh. Vui lòng thử lại.");
   }
 
   async update(id: string, dto: UpdateStudentDto, actorId?: string) {

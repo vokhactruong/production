@@ -9,6 +9,27 @@ Priority:
 1. BUSINESS.md
 2. PRD.md
 3. ROADMAP.md
+   When working on backend:
+
+- docs/BACKEND.md
+
+When working on frontend:
+
+- docs/FRONTEND.md
+
+When working with TanStack Query:
+
+- docs/CACHE.md
+
+When working with Prisma:
+
+- docs/DATABASE.md
+
+When implementing APIs:
+
+- docs/API.md
+
+Always follow these documents before writing code.
 
 If documentation conflicts, follow the highest priority document.
 

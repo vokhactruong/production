@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { studentsApi, getData } from "../../api/client";
@@ -161,6 +161,7 @@ export default function StudentForm() {
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { emitToast } = useToast();
 
   const {
@@ -212,7 +213,13 @@ export default function StudentForm() {
       const payload = buildPayload(data);
       return isEdit ? studentsApi.update(id!, payload) : studentsApi.create(payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (isEdit) {
+        // Populate the detail cache immediately with the PATCH response —
+        // no extra round-trip, no flash of stale data when navigating back.
+        qc.setQueryData(["student", id], response);
+      }
+      qc.invalidateQueries({ queryKey: ["students"] });
       emitToast(isEdit ? "Cập nhật học sinh thành công" : "Tạo học sinh thành công", "success");
       navigate("/students");
     },

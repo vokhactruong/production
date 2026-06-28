@@ -48,6 +48,7 @@ model User {
   refreshTokens RefreshToken[]
   oauthAccounts OAuthAccount[]
   articles      Article[]
+  auditLogs     AuditLog[]
 
   @@map("users")
 }
@@ -201,6 +202,8 @@ model AuditLog {
   metadata  Json?
   ipAddress String?
   createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
 }
