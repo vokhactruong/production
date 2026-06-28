@@ -1,67 +1,79 @@
 # CLAUDE.md
 
+# Project Rules
+
 ## PROJECT DOCUMENTATION
 
-Before implementing new features, consult the relevant documentation in `/docs`.
+Before implementing any feature, read the relevant documentation in `/docs`.
 
-Priority:
+### Product (Highest Priority)
 
 1. BUSINESS.md
 2. PRD.md
 3. ROADMAP.md
-   When working on backend:
 
-- docs/BACKEND.md
+### Engineering
 
-When working on frontend:
+- CONVENTIONS.md
 
-- docs/FRONTEND.md
+### Backend
 
-When working with TanStack Query:
+- BACKEND.md
+- DATABASE.md
+- API.md
 
-- docs/CACHE.md
+### Frontend
 
-When working with Prisma:
+- FRONTEND.md
+- CACHE.md
+- QUERY_KEYS.md
 
-- docs/DATABASE.md
+If documents conflict, follow this order:
 
-When implementing APIs:
+BUSINESS → PRD → ROADMAP → CONVENTIONS → Technical Documents
 
-- docs/API.md
-
-Always follow these documents before writing code.
-
-If documentation conflicts, follow the highest priority document.
-
-## THINK FIRST
+## BEFORE CODING
 
 - Ask ONE clarifying question if requirements are unclear.
-- Define what "done" means before coding.
-- Never assume business rules.
+- Review similar existing modules before creating new ones.
+- Reuse existing architecture and shared components.
+- Define what "done" means before writing code.
 
-## KEEP IT SIMPLE
+## DEVELOPMENT PRINCIPLES
 
-- Write the minimum code needed.
-- Prefer modifying existing code over creating new files.
-- Avoid unnecessary abstractions, dependencies, or refactoring.
-
-## SURGICAL CHANGES
-
-- Change only files related to the task.
-- Report unrelated issues instead of fixing them.
+- Keep solutions simple.
+- Change only what is necessary.
+- Do not refactor unrelated modules.
+- Avoid unnecessary abstractions.
+- Follow existing project conventions.
 
 ## ARCHITECTURE
 
-- Follow Module → Controller → Service → Repository.
-- Organize frontend by feature.
-- Keep business logic out of controllers and UI components.
+Backend
+
+Module → Controller → Service → Repository → Prisma
+
+Frontend
+
+Feature → API → Hooks → Components → Pages
+
+Business logic must never exist inside controllers or UI components.
 
 ## QUALITY
 
-- Validate all inputs.
-- Never expose internal or database errors.
-- Use transactions for multi-step database operations.
-- Avoid N+1 queries and paginate list endpoints.
+Always:
+
+- Validate inputs.
+- Handle loading, empty, and error states.
+- Never expose internal errors.
+- Keep code consistent with existing modules.
+
+Before completion:
+
+- Build passes.
+- Lint passes.
+- Type check passes.
+- Existing functionality remains intact.
 
 ## SECURITY
 
@@ -69,17 +81,18 @@ If documentation conflicts, follow the highest priority document.
 - Never log passwords, tokens, or secrets.
 - Audit critical business actions when applicable.
 
-## BEFORE COMPLETING
-
-- Ensure build, lint, type-check, and tests pass when available.
-- Verify the feature works before reporting completion.
-
 ## PRINCIPLES
 
-Prioritize:
+Prioritize in this order:
 
 1. Business Value
 2. Simplicity
-3. Maintainability
-4. Security
-5. Performance
+3. Consistency
+4. Maintainability
+5. Security
+6. Performance
+
+## AI RULES
+
+- Follow existing project patterns before introducing new ones.
+- Never duplicate code when an existing implementation can be reused.

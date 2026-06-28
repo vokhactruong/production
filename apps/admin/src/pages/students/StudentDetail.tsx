@@ -21,7 +21,7 @@ import { studentsApi, auditLogsApi, getData, getList } from "../../api/client";
 import Can from "../../components/Can";
 import { PERMISSIONS } from "../../constants/permissions";
 import { cn, formatDate, formatDateTime, getInitials } from "../../utils";
-import { STATUS_CONFIG, GENDER_LABEL } from "./constants";
+import { STATUS_CONFIG, GENDER_LABEL, studentKeys, auditLogKeys } from "./constants";
 import type { Student, AuditLog } from "../../types";
 
 const ACTION_CONFIG: Record<
@@ -262,7 +262,7 @@ function ActivityTab({ studentId }: { studentId: string }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["audit-logs", "Student", studentId, limit],
+    queryKey: auditLogKeys.forEntity("Student", studentId, limit),
     queryFn: () => auditLogsApi.getForEntity("Student", studentId, { limit }),
     placeholderData: keepPreviousData,
   });
@@ -387,7 +387,7 @@ export default function StudentDetail() {
   const [tab, setTab] = useState<Tab>("overview");
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["student", id],
+    queryKey: studentKeys.detail(id!),
     queryFn: () => studentsApi.getOne(id!),
     enabled: Boolean(id),
   });

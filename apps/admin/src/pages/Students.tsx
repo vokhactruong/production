@@ -21,7 +21,7 @@ import Can from "../components/Can";
 import { PERMISSIONS } from "../constants/permissions";
 import { cn, formatDate, getInitials } from "../utils";
 import { useDebounce } from "../hooks";
-import { STATUS_CONFIG, GENDER_LABEL } from "./students/constants";
+import { STATUS_CONFIG, GENDER_LABEL, studentKeys } from "./students/constants";
 import type { Student } from "../types";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -313,7 +313,7 @@ export default function Students() {
   }, [debouncedInput]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["students", search, status, page],
+    queryKey: studentKeys.list({ search, status, page }),
     queryFn: () =>
       studentsApi.getAll({
         search: search || undefined,
@@ -328,8 +328,9 @@ export default function Students() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => studentsApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["students"] });
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: studentKeys.lists() });
+      qc.removeQueries({ queryKey: studentKeys.detail(id) });
       emitToast("Đã xoá học sinh", "success");
       setDeleteStudent(null);
     },

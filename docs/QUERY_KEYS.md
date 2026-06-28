@@ -1,5 +1,15 @@
 # QUERY_KEYS.md
 
+## Mandatory Rules
+
+Every feature MUST expose its own query key factory.
+
+Hardcoded query keys are forbidden.
+
+Every mutation must follow the cache strategy defined in this document.
+
+Components must never define query keys.
+
 # TanStack Query Key Standards
 
 This document defines the query key conventions for the Education Center Management SaaS.

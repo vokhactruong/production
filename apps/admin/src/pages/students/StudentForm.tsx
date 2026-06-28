@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { studentsApi, getData } from "../../api/client";
+import { studentKeys } from "./constants";
 import { useToast } from "../../components/Toast";
 import { cn } from "../../utils";
 import type { Student } from "../../types";
@@ -179,7 +180,7 @@ export default function StudentForm() {
 
   // Fetch student data for edit mode
   const { data: studentRes, isLoading: isFetching } = useQuery({
-    queryKey: ["student", id],
+    queryKey: studentKeys.detail(id!),
     queryFn: () => studentsApi.getOne(id!),
     enabled: isEdit,
   });
@@ -215,11 +216,9 @@ export default function StudentForm() {
     },
     onSuccess: (response) => {
       if (isEdit) {
-        // Populate the detail cache immediately with the PATCH response —
-        // no extra round-trip, no flash of stale data when navigating back.
-        qc.setQueryData(["student", id], response);
+        qc.setQueryData(studentKeys.detail(id!), response);
       }
-      qc.invalidateQueries({ queryKey: ["students"] });
+      qc.invalidateQueries({ queryKey: studentKeys.lists() });
       emitToast(isEdit ? "Cập nhật học sinh thành công" : "Tạo học sinh thành công", "success");
       navigate("/students");
     },
