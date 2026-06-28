@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Pencil,
@@ -17,14 +16,13 @@ import {
   Trash2,
   GraduationCap,
 } from "lucide-react";
-import { studentsApi } from "../../features/students/api/students.api";
-import { auditLogsApi } from "../../features/audit-logs/api/audit-logs.api";
-import { getData, getList } from "../../lib/api-client";
+import { useStudent } from "../../features/students/hooks/use-student";
+import { useStudentActivity } from "../../features/students/hooks/use-student-activity";
 import Can from "../../components/Can";
 import { PERMISSIONS } from "../../constants/permissions";
 import { cn, formatDate, formatDateTime, getInitials } from "../../utils";
-import { STATUS_CONFIG, GENDER_LABEL, studentKeys, auditLogKeys } from "./constants";
-import type { Student, AuditLog } from "../../types";
+import { STATUS_CONFIG, GENDER_LABEL } from "./constants";
+import type { Student } from "../../types";
 
 const ACTION_CONFIG: Record<
   string,
@@ -263,13 +261,7 @@ const PAGE_SIZE = 10;
 function ActivityTab({ studentId }: { studentId: string }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: auditLogKeys.forEntity("Student", studentId, limit),
-    queryFn: () => auditLogsApi.getForEntity("Student", studentId, { limit }),
-    placeholderData: keepPreviousData,
-  });
-
-  const logs = data ? getList<AuditLog>(data) : null;
+  const { data: logs, isLoading, isFetching } = useStudentActivity(studentId, limit);
   const hasMore = logs ? logs.meta.total > limit : false;
 
   if (isLoading) {
@@ -388,13 +380,7 @@ export default function StudentDetail() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: studentKeys.detail(id!),
-    queryFn: () => studentsApi.getOne(id!),
-    enabled: Boolean(id),
-  });
-
-  const student = useMemo(() => (data ? getData<Student>(data) : null), [data]);
+  const { data: student, isLoading, isError } = useStudent(id);
 
   if (isLoading) return <DetailSkeleton />;
 

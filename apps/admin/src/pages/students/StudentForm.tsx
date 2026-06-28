@@ -1,17 +1,15 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
-import { studentsApi } from "../../features/students/api/students.api";
-import { getData } from "../../lib/api-client";
-import { studentKeys } from "./constants";
+import { useStudent } from "../../features/students/hooks/use-student";
+import { useCreateStudent } from "../../features/students/hooks/use-create-student";
+import { useUpdateStudent } from "../../features/students/hooks/use-update-student";
 import { useToast } from "../../components/Toast";
 import { cn } from "../../utils";
-import type { Student } from "../../types";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -163,7 +161,6 @@ export default function StudentForm() {
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const { emitToast } = useToast();
 
   const {
@@ -179,18 +176,12 @@ export default function StudentForm() {
 
   const selectedStatus = watch("status");
 
-  // Fetch student data for edit mode
-  const { data: studentRes, isLoading: isFetching } = useQuery({
-    queryKey: studentKeys.detail(id!),
-    queryFn: () => studentsApi.getOne(id!),
-    enabled: isEdit,
-  });
+  const { data: student, isLoading: isFetching } = useStudent(isEdit ? id : undefined);
+  const createStudent = useCreateStudent();
+  const updateStudent = useUpdateStudent(id ?? "");
 
-  // Memoize so the object reference is stable between renders — prevents
-  // useEffect from firing on every re-render (e.g. when isPending changes).
-  const student = useMemo(() => (studentRes ? getData<Student>(studentRes) : null), [studentRes]);
+  const isPending = createStudent.isPending || updateStudent.isPending;
 
-  // Prefill form when data loads
   useEffect(() => {
     if (student) {
       reset({
@@ -209,29 +200,6 @@ export default function StudentForm() {
       });
     }
   }, [student, reset]);
-
-  const mutation = useMutation({
-    mutationFn: (data: FormData) => {
-      const payload = buildPayload(data);
-      return isEdit ? studentsApi.update(id!, payload) : studentsApi.create(payload);
-    },
-    onSuccess: (response) => {
-      if (isEdit) {
-        qc.setQueryData(studentKeys.detail(id!), response);
-      }
-      qc.invalidateQueries({ queryKey: studentKeys.lists() });
-      emitToast(isEdit ? "Cập nhật học sinh thành công" : "Tạo học sinh thành công", "success");
-      navigate("/students");
-    },
-    onError: (err) => {
-      const msg = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
-        : "Có lỗi xảy ra";
-      emitToast(msg, "error");
-    },
-  });
-
-  const isPending = mutation.isPending;
 
   if (isEdit && isFetching) {
     return (
@@ -266,7 +234,30 @@ export default function StudentForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit((data) => mutation.mutate(data))} noValidate>
+      <form
+        onSubmit={handleSubmit((data) => {
+          const payload = buildPayload(data);
+          const onSuccess = () => {
+            emitToast(
+              isEdit ? "Cập nhật học sinh thành công" : "Tạo học sinh thành công",
+              "success"
+            );
+            navigate("/students");
+          };
+          const onError = (err: unknown) => {
+            const msg = axios.isAxiosError(err)
+              ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
+              : "Có lỗi xảy ra";
+            emitToast(msg, "error");
+          };
+          if (isEdit) {
+            updateStudent.mutate(payload, { onSuccess, onError });
+          } else {
+            createStudent.mutate(payload, { onSuccess, onError });
+          }
+        })}
+        noValidate
+      >
         <div className="flex flex-col gap-5">
           {/* ── Student Code (edit mode only) ────────────────────────────────── */}
           {isEdit && student?.code && (

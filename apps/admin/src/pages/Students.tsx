@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Search,
@@ -15,14 +14,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import axios from "axios";
-import { studentsApi } from "../features/students/api/students.api";
-import { getList } from "../lib/api-client";
+import { useStudents } from "../features/students/hooks/use-students";
+import { useDeleteStudent } from "../features/students/hooks/use-delete-student";
 import { useToast } from "../components/Toast";
 import Can from "../components/Can";
 import { PERMISSIONS } from "../constants/permissions";
 import { cn, formatDate, getInitials } from "../utils";
 import { useDebounce } from "../hooks";
-import { STATUS_CONFIG, GENDER_LABEL, studentKeys } from "./students/constants";
+import { STATUS_CONFIG, GENDER_LABEL } from "./students/constants";
 import type { Student } from "../types";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -276,7 +275,6 @@ function DeleteDialog({
 export default function Students() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const qc = useQueryClient();
   const { emitToast } = useToast();
 
   // URL is the source of truth for query state
@@ -313,35 +311,10 @@ export default function Students() {
     );
   }, [debouncedInput]);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: studentKeys.list({ search, status, page }),
-    queryFn: () =>
-      studentsApi.getAll({
-        search: search || undefined,
-        status: status || undefined,
-        page,
-        limit: 10,
-      }),
-  });
-
-  const studentsData = data ? getList<Student>(data) : null;
+  const { data: studentsData, isLoading, isError } = useStudents({ search, status, page });
   const isFiltered = Boolean(search || status);
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => studentsApi.delete(id),
-    onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: studentKeys.lists() });
-      qc.removeQueries({ queryKey: studentKeys.detail(id) });
-      emitToast("Đã xoá học sinh", "success");
-      setDeleteStudent(null);
-    },
-    onError: (err) => {
-      const msg = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
-        : "Có lỗi xảy ra";
-      emitToast(msg, "error");
-    },
-  });
+  const deleteMutation = useDeleteStudent();
 
   return (
     <div className="flex flex-col gap-5">
@@ -650,7 +623,20 @@ export default function Students() {
         <DeleteDialog
           student={deleteStudent}
           isPending={deleteMutation.isPending}
-          onConfirm={() => deleteMutation.mutate(deleteStudent.id)}
+          onConfirm={() =>
+            deleteMutation.mutate(deleteStudent.id, {
+              onSuccess: () => {
+                emitToast("Đã xoá học sinh", "success");
+                setDeleteStudent(null);
+              },
+              onError: (err) => {
+                const msg = axios.isAxiosError(err)
+                  ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
+                  : "Có lỗi xảy ra";
+                emitToast(msg, "error");
+              },
+            })
+          }
           onCancel={() => setDeleteStudent(null)}
         />
       )}
