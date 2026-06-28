@@ -7,7 +7,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { cn } from "../../utils";
-import { uploadApi, getData } from "../../api/client";
+import { uploadApi } from "../../features/upload/api/upload.api";
+import { getData } from "../../lib/api-client";
 import { useToast } from "../Toast";
 import type { UploadResponse } from "../../types";
 

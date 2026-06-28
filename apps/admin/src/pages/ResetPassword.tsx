@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { authApi } from "../api/client";
+import { authApi } from "../features/auth/api/auth.api";
 import { useToast } from "../components/Toast";
 import axios from "axios";
 

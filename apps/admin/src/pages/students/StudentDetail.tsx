@@ -17,7 +17,9 @@ import {
   Trash2,
   GraduationCap,
 } from "lucide-react";
-import { studentsApi, auditLogsApi, getData, getList } from "../../api/client";
+import { studentsApi } from "../../features/students/api/students.api";
+import { auditLogsApi } from "../../features/audit-logs/api/audit-logs.api";
+import { getData, getList } from "../../lib/api-client";
 import Can from "../../components/Can";
 import { PERMISSIONS } from "../../constants/permissions";
 import { cn, formatDate, formatDateTime, getInitials } from "../../utils";

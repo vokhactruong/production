@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
-import { articlesApi, getData } from "../../api/client";
+import { articlesApi } from "../../features/articles/api/articles.api";
+import { getData } from "../../lib/api-client";
 import { formatDate } from "../../utils";
 import type { Article } from "../../types";
 

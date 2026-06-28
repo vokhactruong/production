@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/auth.store";
-import { authApi, getData } from "./api/client";
+import { authApi } from "./features/auth/api/auth.api";
+import { getData } from "./lib/api-client";
 import { PERMISSIONS } from "./constants/permissions";
 import type { AuthUser } from "./types";
 import SplashScreen from "./components/SplashScreen";

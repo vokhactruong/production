@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
-import { authApi } from "../api/client";
+import { authApi } from "../features/auth/api/auth.api";
 import { PERMISSIONS } from "../constants/permissions";
 
 const MENU = [

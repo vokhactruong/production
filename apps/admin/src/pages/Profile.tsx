@@ -1,7 +1,9 @@
 import React, { useRef, useState } from "react";
 import { Camera, X } from "lucide-react";
 import { useAuthStore } from "../store/auth.store";
-import { usersApi, uploadApi, getData } from "../api/client";
+import { usersApi } from "../features/users/api/users.api";
+import { uploadApi } from "../features/upload/api/upload.api";
+import { getData } from "../lib/api-client";
 import { useToast } from "../components/Toast";
 import type { User } from "../types";
 import axios from "axios";

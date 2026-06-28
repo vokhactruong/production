@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Users, FileText, Tag, Shield, Key } from "lucide-react";
-import { dashboardApi } from "../api/client";
+import { dashboardApi } from "../features/dashboard/api/dashboard.api";
 import { cn, formatDate } from "../utils";
 
 function StatCard({

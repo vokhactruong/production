@@ -15,7 +15,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import axios from "axios";
-import { studentsApi, getList } from "../api/client";
+import { studentsApi } from "../features/students/api/students.api";
+import { getList } from "../lib/api-client";
 import { useToast } from "../components/Toast";
 import Can from "../components/Can";
 import { PERMISSIONS } from "../constants/permissions";

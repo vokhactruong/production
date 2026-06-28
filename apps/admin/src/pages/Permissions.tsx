@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { permissionsApi, getData } from "../api/client";
+import { permissionsApi } from "../features/permissions/api/permissions.api";
+import { getData } from "../lib/api-client";
 import { useAuthStore } from "../store/auth.store";
 import { PERMISSIONS } from "../constants/permissions";
 import type { Permission } from "../types";

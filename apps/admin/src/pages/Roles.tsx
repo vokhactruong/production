@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, ShieldCheck } from "lucide-react";
-import { rolesApi, permissionsApi, getData } from "../api/client";
+import { rolesApi } from "../features/roles/api/roles.api";
+import { permissionsApi } from "../features/permissions/api/permissions.api";
+import { getData } from "../lib/api-client";
 import { useAuthStore } from "../store/auth.store";
 import { PERMISSIONS } from "../constants/permissions";
 import { useToast } from "../components/Toast";

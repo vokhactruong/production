@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { authApi, getData } from "../api/client";
+import { authApi } from "../features/auth/api/auth.api";
+import { getData } from "../lib/api-client";
 import { useAuthStore } from "../store/auth.store";
 import type { AuthUser } from "../types";
 import SplashScreen from "../components/SplashScreen";
