@@ -7,4 +7,5 @@ export const authApi = {
   me: () => api.get("/auth/me"),
   forgotPassword: (email: string) => api.post("/auth/forgot-password", { email }),
   resetPassword: (d: { token: string; password: string }) => api.post("/auth/reset-password", d),
+  exchangeOAuthCode: (code: string) => api.post("/auth/oauth/exchange", { code }),
 };

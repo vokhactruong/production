@@ -16,7 +16,7 @@ import { Throttle } from "@nestjs/throttler";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
-import { RegisterDto, LoginDto } from "./dto/auth.dto";
+import { RegisterDto, LoginDto, ExchangeOAuthCodeDto } from "./dto/auth.dto";
 import { Public } from "./decorators/public.decorator";
 import { AuthGuard } from "./guards/auth.guard";
 import { CurrentUser, RequestUser } from "./decorators/current-user.decorator";
@@ -111,7 +111,20 @@ export class AuthController {
     const result = await this.authService.googleLogin(req.user);
     res.cookie("refreshToken", result.refreshToken, REFRESH_COOKIE_OPTIONS);
 
+    const code = this.authService.generateOAuthCode({
+      accessToken: result.accessToken,
+      user: result.user,
+    });
+
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
-    return res.redirect(`${frontendUrl}/auth/callback?token=${result.accessToken}`);
+    return res.redirect(`${frontendUrl}/auth/callback?code=${code}`);
+  }
+
+  @Public()
+  @Post("oauth/exchange")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Exchange one-time OAuth code for access token" })
+  async exchangeOAuthCode(@Body() dto: ExchangeOAuthCodeDto) {
+    return this.authService.exchangeOAuthCode(dto.code);
   }
 }

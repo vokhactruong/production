@@ -12,12 +12,48 @@ import * as crypto from "crypto";
 import { GoogleProfile } from "./strategies/google.strategy";
 import { RequestUser } from "./decorators/current-user.decorator";
 
+interface OAuthUserPayload {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  roles: string[];
+  permissions: string[];
+}
+
+interface OAuthCodeEntry {
+  accessToken: string;
+  user: OAuthUserPayload;
+  expiresAt: number;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService
   ) {}
+
+  private readonly oauthCodes = new Map<string, OAuthCodeEntry>();
+
+  generateOAuthCode(data: { accessToken: string; user: OAuthUserPayload }): string {
+    const code = crypto.randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + 60_000;
+    this.oauthCodes.set(code, { ...data, expiresAt });
+    setTimeout(() => this.oauthCodes.delete(code), 60_000);
+    return code;
+  }
+
+  exchangeOAuthCode(code: string): { accessToken: string; user: OAuthUserPayload } {
+    const entry = this.oauthCodes.get(code);
+    if (!entry || entry.expiresAt < Date.now()) {
+      this.oauthCodes.delete(code);
+      throw new UnauthorizedException("Code không hợp lệ hoặc đã hết hạn");
+    }
+    this.oauthCodes.delete(code);
+    return { accessToken: entry.accessToken, user: entry.user };
+  }
 
   private sha256(value: string): string {
     return crypto.createHash("sha256").update(value).digest("hex");

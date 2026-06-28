@@ -12,17 +12,16 @@ export default function AuthCallback() {
   const { setAuth } = useAuthStore();
 
   useEffect(() => {
-    const token = params.get("token");
-    if (!token) {
+    const code = params.get("code");
+    if (!code) {
       navigate("/login");
       return;
     }
-    localStorage.setItem("accessToken", token);
     authApi
-      .me()
+      .exchangeOAuthCode(code)
       .then((res) => {
-        const user = getData<AuthUser>(res);
-        setAuth(user, token);
+        const { accessToken, user } = getData<{ accessToken: string; user: AuthUser }>(res);
+        setAuth(user, accessToken);
         navigate("/dashboard");
       })
       .catch(() => navigate("/login"));
