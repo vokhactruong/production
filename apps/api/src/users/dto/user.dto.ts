@@ -9,6 +9,7 @@ import {
   Matches,
   IsNumber,
   Min,
+  MaxLength,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
@@ -78,9 +79,10 @@ export class UpdateUserDto {
 }
 
 export class UserQueryDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 100 })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   search?: string;
 
   @ApiPropertyOptional({ enum: ["ACTIVE", "INACTIVE", "SUSPENDED"] })

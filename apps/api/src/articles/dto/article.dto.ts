@@ -105,9 +105,10 @@ export class UpdateArticleDto {
 }
 
 export class ArticleQueryDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 100 })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   search?: string;
 
   @ApiPropertyOptional({ enum: ["DRAFT", "REVIEW", "PUBLISHED", "ARCHIVED"] })
