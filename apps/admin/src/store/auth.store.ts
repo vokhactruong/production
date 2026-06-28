@@ -13,10 +13,9 @@ export interface AuthUser {
 
 interface AuthState {
   user: AuthUser | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
   isHydrating: boolean;
-  setAuth: (user: AuthUser, token: string) => void;
+  setUser: (user: AuthUser) => void;
   clearAuth: () => void;
   setHydrating: (v: boolean) => void;
   hasPermission: (code: string) => boolean;
@@ -27,19 +26,13 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       isHydrating: true,
 
-      setAuth: (user, accessToken) => {
-        localStorage.setItem("accessToken", accessToken);
-        set({ user, accessToken, isAuthenticated: true });
-      },
+      setUser: (user) => set({ user, isAuthenticated: true }),
 
-      clearAuth: () => {
-        localStorage.removeItem("accessToken");
-        set({ user: null, accessToken: null, isAuthenticated: false });
-      },
+      // Rule 2: Store ONLY manages user state — token and cache are not store concerns
+      clearAuth: () => set({ user: null, isAuthenticated: false }),
 
       setHydrating: (v) => set({ isHydrating: v }),
 
@@ -58,7 +51,6 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-store",
       partialize: (s) => ({
         user: s.user,
-        accessToken: s.accessToken,
         isAuthenticated: s.isAuthenticated,
       }),
     }

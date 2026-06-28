@@ -12,7 +12,7 @@ const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 5 * 1024 * 1024;
 
 export default function Profile() {
-  const { user, setAuth, accessToken } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const { emitToast } = useToast();
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
@@ -87,17 +87,12 @@ export default function Profile() {
       });
       const updated = getData<User>(res);
       pendingPublicIdRef.current = null;
-      if (accessToken) {
-        setAuth(
-          {
-            ...user,
-            firstName: updated.firstName,
-            lastName: updated.lastName,
-            avatar: updated.avatar ?? undefined,
-          },
-          accessToken
-        );
-      }
+      setUser({
+        ...user!,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        avatar: updated.avatar ?? undefined,
+      });
       emitToast("Cập nhật hồ sơ thành công", "success");
     } catch (err) {
       const msg = axios.isAxiosError(err)

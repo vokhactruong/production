@@ -1,15 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { authApi } from "../features/auth/api/auth.api";
-import { getData } from "../lib/api-client";
-import { useAuthStore } from "../store/auth.store";
-import type { AuthUser } from "../types";
+import { authManager } from "../features/auth/services/auth-manager";
 import SplashScreen from "../components/SplashScreen";
 
 export default function AuthCallback() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
 
   useEffect(() => {
     const code = params.get("code");
@@ -17,13 +13,9 @@ export default function AuthCallback() {
       navigate("/login");
       return;
     }
-    authApi
-      .exchangeOAuthCode(code)
-      .then((res) => {
-        const { accessToken, user } = getData<{ accessToken: string; user: AuthUser }>(res);
-        setAuth(user, accessToken);
-        navigate("/dashboard");
-      })
+    authManager
+      .handleOAuthCallback(code)
+      .then(() => navigate("/dashboard"))
       .catch(() => navigate("/login"));
   }, []);
 

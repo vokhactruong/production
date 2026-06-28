@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
-import { authApi } from "../features/auth/api/auth.api";
+import { authManager } from "../features/auth/services/auth-manager";
 import { PERMISSIONS } from "../constants/permissions";
 
 const MENU = [
@@ -41,19 +41,9 @@ const MENU = [
 ];
 
 export default function Sidebar() {
-  const { hasPermission, clearAuth, user } = useAuthStore();
+  const { hasPermission, user } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
-  const navigate = useNavigate();
-  const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // ignore
-    } finally {
-      clearAuth();
-      navigate("/login");
-    }
-  };
+  const handleLogout = () => authManager.logout();
 
   const visibleMenu = MENU.filter(
     (item) => item.permission === null || hasPermission(item.permission)

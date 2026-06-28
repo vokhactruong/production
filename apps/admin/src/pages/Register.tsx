@@ -3,11 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { authApi } from "../features/auth/api/auth.api";
-import { getData } from "../lib/api-client";
-import { useAuthStore } from "../store/auth.store";
+import { authManager } from "../features/auth/services/auth-manager";
 import { useToast } from "../components/Toast";
-import type { AuthUser } from "../types";
 import axios from "axios";
 
 const schema = z.object({
@@ -25,7 +22,6 @@ type FormData = z.infer<typeof schema>;
 
 export default function Register() {
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
   const { emitToast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -38,9 +34,7 @@ export default function Register() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const res = await authApi.register(data);
-      const result = getData<{ accessToken: string; user: AuthUser }>(res);
-      setAuth(result.user, result.accessToken);
+      await authManager.register(data);
       navigate("/dashboard");
     } catch (err) {
       const msg =

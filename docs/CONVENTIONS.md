@@ -403,7 +403,14 @@ Display friendly toast.
 
 Log unexpected errors.
 
----
+## Authentication
+
+- Access Token has a single source of truth: authStorage.
+- Only Login, Refresh Interceptor and Logout may modify the access token.
+- Auth Store manages only authentication state and current user.
+- Components must never access localStorage directly.
+- AuthProvider hydrates the authenticated user only.
+- Refresh logic belongs exclusively to the Axios interceptor.
 
 # Logging
 

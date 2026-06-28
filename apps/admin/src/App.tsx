@@ -1,11 +1,7 @@
-import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/auth.store";
-import { authApi } from "./features/auth/api/auth.api";
-import { getData } from "./lib/api-client";
 import { PERMISSIONS } from "./constants/permissions";
-import type { AuthUser } from "./types";
-import SplashScreen from "./components/SplashScreen";
+import { AuthProvider } from "./features/auth/provider/AuthProvider";
 import AdminLayout from "./layouts/AdminLayout";
 
 import Login from "./pages/Login";
@@ -27,29 +23,6 @@ import Settings from "./pages/Settings";
 import Students from "./pages/Students";
 import StudentDetail from "./pages/students/StudentDetail";
 import StudentForm from "./pages/students/StudentForm";
-
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isHydrating, setHydrating, setAuth, clearAuth } = useAuthStore();
-
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      setHydrating(false);
-      return;
-    }
-    authApi
-      .me()
-      .then((res) => {
-        const user = getData<AuthUser>(res);
-        setAuth(user, token);
-      })
-      .catch(() => clearAuth())
-      .finally(() => setHydrating(false));
-  }, []);
-
-  if (isHydrating) return <SplashScreen />;
-  return <>{children}</>;
-}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
