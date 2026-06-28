@@ -38,6 +38,7 @@ export class AuthController {
 
   @Public()
   @Post("register")
+  @Throttle({ default: { limit: 10, ttl: 600_000 } })
   @ApiOperation({ summary: "Đăng ký tài khoản" })
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.register(dto);
@@ -48,7 +49,7 @@ export class AuthController {
   @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  @Throttle({ login: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: "Đăng nhập" })
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(dto);
@@ -70,6 +71,7 @@ export class AuthController {
   @Public()
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: "Làm mới access token" })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.["refreshToken"] as string | undefined;
@@ -123,6 +125,7 @@ export class AuthController {
   @Public()
   @Post("oauth/exchange")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: "Exchange one-time OAuth code for access token" })
   async exchangeOAuthCode(@Body() dto: ExchangeOAuthCodeDto) {
     return this.authService.exchangeOAuthCode(dto.code);

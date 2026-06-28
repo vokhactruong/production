@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
-import { ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
@@ -15,10 +16,11 @@ import { DashboardModule } from "./dashboard/dashboard.module";
 import { StudentsModule } from "./students/students.module";
 
 @Module({
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ name: "login", ttl: 60000, limit: 5 }]),
+    ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 60 }]),
     PrismaModule,
     AuthModule,
     UsersModule,
