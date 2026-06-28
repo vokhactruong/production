@@ -59,6 +59,7 @@ async function bootstrap() {
     .addTag("Articles")
     .addTag("Upload")
     .addTag("Audit Logs")
+    .addTag("Students")
     .build();
   SwaggerModule.setup("api/docs", app, SwaggerModule.createDocument(app, config));
 
