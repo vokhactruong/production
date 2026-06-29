@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "allow": ["PowerShell(pnpm type-check 2>&1)"]
+  }
+}
