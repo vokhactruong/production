@@ -68,8 +68,6 @@ Always:
 
 Never use removeQueries after update.
 
----
-
 # Delete
 
 Always
