@@ -37,6 +37,7 @@ export class UsersService {
     const skip = (page - 1) * limit;
 
     const where = {
+      deletedAt: null,
       ...(search && {
         OR: [
           { firstName: { contains: search, mode: "insensitive" as const } },
@@ -65,7 +66,10 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id }, select: USER_SELECT });
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: USER_SELECT,
+    });
     if (!user) throw new NotFoundException("Người dùng không tồn tại");
     return this.formatUser(user);
   }
@@ -136,7 +140,7 @@ export class UsersService {
   async remove(id: string, actorId?: string) {
     if (id === actorId) throw new BadRequestException("Không thể xóa chính mình");
     await this.findOne(id);
-    await this.prisma.user.delete({ where: { id } });
+    await this.prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
     await this.auditLogs.log({ userId: actorId, action: "DELETE", entity: "User", entityId: id });
     return { message: "Xóa người dùng thành công" };
   }

@@ -40,6 +40,24 @@ const ARTICLE_INCLUDE = {
   category: { select: { id: true, name: true, slug: true } },
 };
 
+const ARTICLE_LIST_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  excerpt: true,
+  thumbnail: true,
+  status: true,
+  publishedAt: true,
+  viewCount: true,
+  tags: true,
+  authorId: true,
+  categoryId: true,
+  createdAt: true,
+  updatedAt: true,
+  author: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+  category: { select: { id: true, name: true, slug: true } },
+};
+
 @Injectable()
 export class ArticlesService {
   constructor(
@@ -67,6 +85,7 @@ export class ArticlesService {
     const canManageAll = user.permissions.includes("article.manage");
 
     const where = {
+      deletedAt: null,
       ...(search && { title: { contains: search, mode: "insensitive" as const } }),
       ...(status && { status }),
       ...(categoryId && { categoryId }),
@@ -76,7 +95,7 @@ export class ArticlesService {
     const [items, total] = await Promise.all([
       this.prisma.article.findMany({
         where,
-        include: ARTICLE_INCLUDE,
+        select: ARTICLE_LIST_SELECT,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
@@ -88,8 +107,8 @@ export class ArticlesService {
   }
 
   async findOneAdmin(id: string, user: RequestUser) {
-    const article = await this.prisma.article.findUnique({
-      where: { id },
+    const article = await this.prisma.article.findFirst({
+      where: { id, deletedAt: null },
       include: ARTICLE_INCLUDE,
     });
     if (!article) throw new NotFoundException("Bài viết không tồn tại");
@@ -106,6 +125,7 @@ export class ArticlesService {
 
     const where = {
       status: "PUBLISHED" as const,
+      deletedAt: null,
       ...(search && { title: { contains: search, mode: "insensitive" as const } }),
       ...(categoryId && { categoryId }),
     };
@@ -113,7 +133,7 @@ export class ArticlesService {
     const [items, total] = await Promise.all([
       this.prisma.article.findMany({
         where,
-        include: ARTICLE_INCLUDE,
+        select: ARTICLE_LIST_SELECT,
         skip,
         take: limit,
         orderBy: { publishedAt: "desc" },
@@ -125,12 +145,11 @@ export class ArticlesService {
   }
 
   async findOnePublic(slug: string) {
-    const article = await this.prisma.article.findUnique({
-      where: { slug },
+    const article = await this.prisma.article.findFirst({
+      where: { slug, status: "PUBLISHED", deletedAt: null },
       include: ARTICLE_INCLUDE,
     });
-    if (!article || article.status !== "PUBLISHED")
-      throw new NotFoundException("Bài viết không tồn tại");
+    if (!article) throw new NotFoundException("Bài viết không tồn tại");
 
     await this.prisma.article.update({
       where: { id: article.id },
@@ -216,24 +235,28 @@ export class ArticlesService {
 
   async remove(id: string, user: RequestUser) {
     const article = await this.findOneAdmin(id, user);
-    if (article.thumbnailPublicId) {
-      await this.uploadService.deleteImage(article.thumbnailPublicId, {
-        entity: "Article",
-        entityId: id,
-      });
-    }
-    await this.prisma.article.delete({ where: { id } });
+
+    await this.prisma.article.update({ where: { id }, data: { deletedAt: new Date() } });
+
     await this.auditLogs.log({
       userId: user.id,
       action: "DELETE",
       entity: "Article",
       entityId: id,
     });
+
+    if (article.thumbnailPublicId) {
+      await this.uploadService.deleteImage(article.thumbnailPublicId, {
+        entity: "Article",
+        entityId: id,
+      });
+    }
+
     return { message: "Xóa bài viết thành công" };
   }
 
   async publish(id: string, user: RequestUser) {
-    const article = await this.prisma.article.findUnique({ where: { id } });
+    const article = await this.prisma.article.findFirst({ where: { id, deletedAt: null } });
     if (!article) throw new NotFoundException();
 
     const canManageAll = user.permissions.includes("article.manage");
@@ -255,7 +278,7 @@ export class ArticlesService {
   }
 
   async unpublish(id: string, user: RequestUser) {
-    const article = await this.prisma.article.findUnique({ where: { id } });
+    const article = await this.prisma.article.findFirst({ where: { id, deletedAt: null } });
     if (!article) throw new NotFoundException();
 
     const canManageAll = user.permissions.includes("article.manage");
@@ -269,7 +292,7 @@ export class ArticlesService {
   }
 
   async archive(id: string, user: RequestUser) {
-    const article = await this.prisma.article.findUnique({ where: { id } });
+    const article = await this.prisma.article.findFirst({ where: { id, deletedAt: null } });
     if (!article) throw new NotFoundException();
 
     const canManageAll = user.permissions.includes("article.manage");

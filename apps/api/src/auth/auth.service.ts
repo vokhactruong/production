@@ -96,7 +96,6 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email, roles, permissions };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
       expiresIn: process.env.JWT_EXPIRES_IN ?? "15m",
     });
 
@@ -157,7 +156,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findFirst({ where: { email: dto.email, deletedAt: null } });
     if (!user || !user.password) throw new UnauthorizedException("Email hoặc mật khẩu không đúng");
 
     const valid = await bcrypt.compare(dto.password, user.password);
@@ -201,7 +200,9 @@ export class AuthService {
 
     await this.prisma.refreshToken.delete({ where: { id: stored.id } });
 
-    const user = await this.prisma.user.findUnique({ where: { id: stored.userId } });
+    const user = await this.prisma.user.findFirst({
+      where: { id: stored.userId, deletedAt: null },
+    });
     if (!user || user.status !== "ACTIVE") throw new UnauthorizedException();
 
     const { roles, permissions } = await this.buildUserPermissions(user.id);
@@ -223,8 +224,8 @@ export class AuthService {
   }
 
   async me(currentUser: RequestUser) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: currentUser.id },
+    const user = await this.prisma.user.findFirst({
+      where: { id: currentUser.id, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -247,7 +248,9 @@ export class AuthService {
   async googleLogin(profile: GoogleProfile) {
     if (!profile.email) throw new BadRequestException("Không lấy được email từ Google");
 
-    let user = await this.prisma.user.findUnique({ where: { email: profile.email } });
+    let user = await this.prisma.user.findFirst({
+      where: { email: profile.email, deletedAt: null },
+    });
 
     const studentRole = await this.prisma.role.findUnique({ where: { name: "Student" } });
 
@@ -272,7 +275,6 @@ export class AuthService {
             userId: newUser.id,
             provider: "google",
             providerId: profile.providerId,
-            accessToken: profile.accessToken,
           },
         });
 
@@ -281,12 +283,11 @@ export class AuthService {
     } else {
       await this.prisma.oAuthAccount.upsert({
         where: { provider_providerId: { provider: "google", providerId: profile.providerId } },
-        update: { accessToken: profile.accessToken },
+        update: {},
         create: {
           userId: user.id,
           provider: "google",
           providerId: profile.providerId,
-          accessToken: profile.accessToken,
         },
       });
     }

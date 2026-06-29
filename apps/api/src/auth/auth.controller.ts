@@ -41,9 +41,9 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 600_000 } })
   @ApiOperation({ summary: "Đăng ký tài khoản" })
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.register(dto);
-    res.cookie("refreshToken", result.refreshToken, REFRESH_COOKIE_OPTIONS);
-    return result;
+    const { refreshToken, ...response } = await this.authService.register(dto);
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    return response;
   }
 
   @Public()
@@ -52,9 +52,9 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: "Đăng nhập" })
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(dto);
-    res.cookie("refreshToken", result.refreshToken, REFRESH_COOKIE_OPTIONS);
-    return result;
+    const { refreshToken, ...response } = await this.authService.login(dto);
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    return response;
   }
 
   @Post("logout")
@@ -76,9 +76,9 @@ export class AuthController {
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.["refreshToken"] as string | undefined;
     if (!token) throw new UnauthorizedException("Không có refresh token");
-    const result = await this.authService.refresh(token);
-    res.cookie("refreshToken", result.refreshToken, REFRESH_COOKIE_OPTIONS);
-    return result;
+    const { refreshToken, ...response } = await this.authService.refresh(token);
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    return response;
   }
 
   @Get("me")
