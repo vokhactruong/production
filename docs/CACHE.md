@@ -78,15 +78,11 @@ Always
 
 - invalidate list
 
----
-
 # Optimistic Update
 
 Only use optimistic updates when rollback is implemented.
 
 Otherwise use standard mutation flow.
-
----
 
 # Query Keys
 
