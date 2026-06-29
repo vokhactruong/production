@@ -105,3 +105,33 @@ attendanceKeys
 ...
 
 Never hardcode query keys inside components.
+
+## Mutation Rules
+
+Create
+→ setQueryData(detail) if resource returned
+→ invalidate(list)
+
+Update
+→ setQueryData(detail)
+→ invalidate(list)
+
+Delete
+→ removeQueries(detail)
+→ invalidate(list)
+
+Always remove detail cache before invalidating list caches.
+
+## Global Cache Rules
+
+Whenever a mutation changes data that affects dashboard metrics:
+
+- invalidateQueries(dashboardKeys.stats())
+
+Examples:
+
+- User CRUD
+- Student CRUD
+- Role CRUD
+- Category CRUD
+- Article CRUD

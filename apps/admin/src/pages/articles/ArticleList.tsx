@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Pencil, Trash2, Eye, Archive } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Eye, Archive, AlertCircle } from "lucide-react";
+import { DeleteDialog } from "../../components/DeleteDialog";
 import { articlesApi } from "../../features/articles/api/articles.api";
 import { categoriesApi } from "../../features/categories/api/categories.api";
+import { articleKeys } from "../../features/articles/hooks/query-keys";
+import { categoryKeys } from "../../features/categories/hooks/query-keys";
+import { usePublishArticle } from "../../features/articles/hooks/use-publish-article";
+import { useUnpublishArticle } from "../../features/articles/hooks/use-unpublish-article";
+import { useArchiveArticle } from "../../features/articles/hooks/use-archive-article";
+import { useDeleteArticle } from "../../features/articles/hooks/use-delete-article";
 import { getData, getList } from "../../lib/api-client";
 import { useAuthStore } from "../../store/auth.store";
 import { PERMISSIONS } from "../../constants/permissions";
@@ -27,9 +34,47 @@ const STATUS_LABEL: Record<string, string> = {
   ARCHIVED: "Lưu trữ",
 };
 
+function SkeletonRow() {
+  return (
+    <tr className="animate-pulse">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-16 shrink-0 rounded-lg bg-slate-200" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-3.5 w-40 rounded bg-slate-200" />
+            <div className="h-3 w-28 rounded bg-slate-200" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-5 w-20 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3.5 w-20 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3.5 w-20 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3.5 w-8 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3 w-20 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex justify-end gap-2">
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function ArticleList() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const { emitToast } = useToast();
   const { hasPermission } = useAuthStore();
   const [search, setSearch] = useState("");
@@ -39,8 +84,13 @@ export default function ArticleList() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search, 400);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["articles-admin", debouncedSearch, status, categoryId, page],
+  const { data, isLoading, isError } = useQuery({
+    queryKey: articleKeys.list({
+      search: debouncedSearch || undefined,
+      status: status || undefined,
+      categoryId: categoryId || undefined,
+      page,
+    }),
     queryFn: () =>
       articlesApi.getAdminList({
         search: debouncedSearch || undefined,
@@ -51,7 +101,7 @@ export default function ArticleList() {
       }),
   });
   const { data: catsData } = useQuery({
-    queryKey: ["categories"],
+    queryKey: categoryKeys.lists(),
     queryFn: () => categoriesApi.getAll(),
     enabled: hasPermission(PERMISSIONS.CATEGORY_READ),
   });
@@ -59,46 +109,10 @@ export default function ArticleList() {
   const articlesData = data ? getList<Article>(data) : null;
   const categories = catsData ? getData<Category[]>(catsData) : [];
 
-  const publishMutation = useMutation({
-    mutationFn: (id: string) => articlesApi.publish(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["articles-admin"] });
-      emitToast("Đã xuất bản", "success");
-    },
-    onError: () => emitToast("Có lỗi xảy ra", "error"),
-  });
-  const unpublishMutation = useMutation({
-    mutationFn: (id: string) => articlesApi.unpublish(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["articles-admin"] });
-      emitToast("Đã gỡ xuất bản", "success");
-    },
-    onError: () => emitToast("Có lỗi xảy ra", "error"),
-  });
-  const archiveMutation = useMutation({
-    mutationFn: (id: string) => articlesApi.archive(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["articles-admin"] });
-      emitToast("Đã lưu trữ", "success");
-    },
-    onError: () => emitToast("Có lỗi xảy ra", "error"),
-  });
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => articlesApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["articles-admin"] });
-      emitToast("Đã xóa bài viết", "success");
-      setDeleteId(null);
-    },
-    onError: (err) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    },
-  });
+  const publishMutation = usePublishArticle();
+  const unpublishMutation = useUnpublishArticle();
+  const archiveMutation = useArchiveArticle();
+  const deleteMutation = useDeleteArticle();
 
   return (
     <div className="flex flex-col gap-6">
@@ -107,7 +121,7 @@ export default function ArticleList() {
           <h2 className="text-2xl font-bold text-slate-900">Bài viết</h2>
           <p className="mt-1 text-sm text-slate-500">{articlesData?.meta.total ?? 0} bài viết</p>
         </div>
-        <Can permission="article.create">
+        <Can permission={PERMISSIONS.ARTICLE_CREATE}>
           <button
             onClick={() => navigate("/articles/new")}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
@@ -190,9 +204,19 @@ export default function ArticleList() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : isError ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-slate-400">
-                  Đang tải...
+                <td colSpan={7} className="py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+                      <AlertCircle className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : articlesData?.items.length === 0 ? (
@@ -245,7 +269,7 @@ export default function ArticleList() {
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <Can permission="article.update">
+                      <Can permission={PERMISSIONS.ARTICLE_UPDATE}>
                         <button
                           onClick={() => navigate(`/articles/${article.id}/edit`)}
                           className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
@@ -254,27 +278,42 @@ export default function ArticleList() {
                           <Pencil className="h-4 w-4" />
                         </button>
                       </Can>
-                      <Can permission="article.publish">
+                      <Can permission={PERMISSIONS.ARTICLE_PUBLISH}>
                         {article.status === "PUBLISHED" ? (
                           <button
-                            onClick={() => unpublishMutation.mutate(article.id)}
+                            onClick={() =>
+                              unpublishMutation.mutate(article.id, {
+                                onSuccess: () => emitToast("Đã gỡ xuất bản", "success"),
+                                onError: () => emitToast("Có lỗi xảy ra", "error"),
+                              })
+                            }
                             className="rounded-lg p-1.5 text-yellow-600 hover:bg-yellow-50 text-xs font-medium"
                           >
                             Gỡ
                           </button>
                         ) : article.status !== "ARCHIVED" ? (
                           <button
-                            onClick={() => publishMutation.mutate(article.id)}
+                            onClick={() =>
+                              publishMutation.mutate(article.id, {
+                                onSuccess: () => emitToast("Đã xuất bản", "success"),
+                                onError: () => emitToast("Có lỗi xảy ra", "error"),
+                              })
+                            }
                             className="rounded-lg p-1.5 text-green-600 hover:bg-green-50 text-xs font-medium"
                           >
                             XB
                           </button>
                         ) : null}
                       </Can>
-                      <Can permission="article.manage">
+                      <Can permission={PERMISSIONS.ARTICLE_MANAGE}>
                         {article.status !== "ARCHIVED" && (
                           <button
-                            onClick={() => archiveMutation.mutate(article.id)}
+                            onClick={() =>
+                              archiveMutation.mutate(article.id, {
+                                onSuccess: () => emitToast("Đã lưu trữ", "success"),
+                                onError: () => emitToast("Có lỗi xảy ra", "error"),
+                              })
+                            }
                             className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
                             title="Lưu trữ"
                           >
@@ -282,7 +321,7 @@ export default function ArticleList() {
                           </button>
                         )}
                       </Can>
-                      <Can permission="article.delete">
+                      <Can permission={PERMISSIONS.ARTICLE_DELETE}>
                         <button
                           onClick={() => setDeleteId(article.id)}
                           className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
@@ -318,30 +357,28 @@ export default function ArticleList() {
         </div>
       )}
 
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteId(null)} />
-          <div className="relative rounded-2xl bg-white p-6 shadow-2xl max-w-sm w-full">
-            <h3 className="text-lg font-semibold">Xóa bài viết?</h3>
-            <p className="mt-2 text-sm text-slate-500">Hành động này không thể hoàn tác.</p>
-            <div className="mt-4 flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteId)}
-                disabled={deleteMutation.isPending}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteDialog
+        open={!!deleteId}
+        title="Xóa bài viết?"
+        isPending={deleteMutation.isPending}
+        onConfirm={() =>
+          deleteMutation.mutate(deleteId!, {
+            onSuccess: () => {
+              emitToast("Đã xóa bài viết", "success");
+              setDeleteId(null);
+            },
+            onError: (err) => {
+              emitToast(
+                axios.isAxiosError(err)
+                  ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
+                  : "Có lỗi",
+                "error"
+              );
+            },
+          })
+        }
+        onClose={() => setDeleteId(null)}
+      />
     </div>
   );
 }

@@ -7,8 +7,8 @@ export function useDeleteStudent() {
   return useMutation({
     mutationFn: (id: string) => studentsApi.delete(id),
     onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: studentKeys.lists() });
       qc.removeQueries({ queryKey: studentKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: studentKeys.lists() });
     },
   });
 }

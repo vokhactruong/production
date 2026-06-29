@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Search, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { DeleteDialog } from "../components/DeleteDialog";
 import { usersApi } from "../features/users/api/users.api";
 import { rolesApi } from "../features/roles/api/roles.api";
+import { userKeys } from "../features/users/hooks/query-keys";
+import { roleKeys } from "../features/roles/hooks/query-keys";
+import { useCreateUser } from "../features/users/hooks/use-create-user";
+import { useUpdateUser } from "../features/users/hooks/use-update-user";
+import { useDeleteUser } from "../features/users/hooks/use-delete-user";
 import { getData, getList } from "../lib/api-client";
 import { useToast } from "../components/Toast";
 import Can from "../components/Can";
@@ -34,7 +40,6 @@ interface UserModalProps {
 }
 
 function UserModal({ mode, user, roles, onClose }: UserModalProps) {
-  const qc = useQueryClient();
   const { emitToast } = useToast();
   const [form, setForm] = useState({
     firstName: user?.firstName ?? "",
@@ -45,39 +50,46 @@ function UserModal({ mode, user, roles, onClose }: UserModalProps) {
     roleIds: user?.roles?.map((r) => r.id) ?? [],
   });
 
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const payload =
-        mode === "create"
-          ? {
-              firstName: form.firstName,
-              lastName: form.lastName,
-              email: form.email,
-              password: form.password,
-              status: form.status,
-              roleIds: form.roleIds,
-            }
-          : {
-              firstName: form.firstName,
-              lastName: form.lastName,
-              status: form.status,
-              roleIds: form.roleIds,
-            };
-      if (mode === "create") return usersApi.create(payload);
-      return usersApi.update(user!.id, payload);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+  const createMutation = useCreateUser();
+  const updateMutation = useUpdateUser(user?.id ?? "");
+  const isPending = mode === "create" ? createMutation.isPending : updateMutation.isPending;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const onSuccess = () => {
       emitToast(mode === "create" ? "Tạo người dùng thành công" : "Cập nhật thành công", "success");
       onClose();
-    },
-    onError: (err) => {
+    };
+    const onError = (err: unknown) => {
       const msg = axios.isAxiosError(err)
         ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
         : "Có lỗi";
       emitToast(msg, "error");
-    },
-  });
+    };
+    if (mode === "create") {
+      createMutation.mutate(
+        {
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          password: form.password,
+          status: form.status,
+          roleIds: form.roleIds,
+        },
+        { onSuccess, onError }
+      );
+    } else {
+      updateMutation.mutate(
+        {
+          firstName: form.firstName,
+          lastName: form.lastName,
+          status: form.status,
+          roleIds: form.roleIds,
+        },
+        { onSuccess, onError }
+      );
+    }
+  };
 
   const toggleRole = (id: string) => {
     setForm((prev) => ({
@@ -90,21 +102,22 @@ function UserModal({ mode, user, roles, onClose }: UserModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={!isPending ? onClose : undefined} />
       <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <h2 className="text-lg font-semibold">
             {mode === "create" ? "Tạo người dùng" : "Sửa người dùng"}
           </h2>
-          <button onClick={onClose} className="rounded-lg p-1 hover:bg-slate-100">
+          <button
+            onClick={onClose}
+            disabled={isPending}
+            className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
+          >
             ✕
           </button>
         </div>
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            mutation.mutate();
-          }}
+          onSubmit={handleSubmit}
           className="overflow-y-auto max-h-[70vh] p-6 flex flex-col gap-4"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -187,16 +200,17 @@ function UserModal({ mode, user, roles, onClose }: UserModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              disabled={isPending}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               Huỷ
             </button>
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={isPending}
               className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {mutation.isPending ? "Đang lưu..." : mode === "create" ? "Tạo" : "Lưu"}
+              {isPending ? "Đang lưu..." : mode === "create" ? "Tạo" : "Lưu"}
             </button>
           </div>
         </form>
@@ -205,8 +219,38 @@ function UserModal({ mode, user, roles, onClose }: UserModalProps) {
   );
 }
 
+function SkeletonRow() {
+  return (
+    <tr className="animate-pulse">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 shrink-0 rounded-full bg-slate-200" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-3.5 w-28 rounded bg-slate-200" />
+            <div className="h-3 w-36 rounded bg-slate-200" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-5 w-16 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-5 w-16 rounded-full bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3 w-24 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex justify-end gap-2">
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function Users() {
-  const qc = useQueryClient();
   const { emitToast } = useToast();
   const { hasPermission } = useAuthStore();
   const [search, setSearch] = useState("");
@@ -220,8 +264,12 @@ export default function Users() {
 
   const debouncedSearch = useDebounce(search, 400);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["users", debouncedSearch, status, page],
+  const { data, isLoading, isError } = useQuery({
+    queryKey: userKeys.list({
+      search: debouncedSearch || undefined,
+      status: status || undefined,
+      page,
+    }),
     queryFn: () =>
       usersApi.getAll({
         search: debouncedSearch || undefined,
@@ -232,7 +280,7 @@ export default function Users() {
   });
 
   const { data: rolesData } = useQuery({
-    queryKey: ["roles"],
+    queryKey: roleKeys.lists(),
     queryFn: () => rolesApi.getAll(),
     enabled: hasPermission(PERMISSIONS.ROLE_READ),
   });
@@ -240,20 +288,7 @@ export default function Users() {
   const usersData = data ? getList<User & { roles?: Role[] }>(data) : null;
   const roles = rolesData ? getData<Role[]>(rolesData) : [];
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => usersApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
-      emitToast("Đã xóa người dùng", "success");
-      setDeleteId(null);
-    },
-    onError: (err) => {
-      const msg = axios.isAxiosError(err)
-        ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-        : "Có lỗi";
-      emitToast(msg, "error");
-    },
-  });
+  const deleteMutation = useDeleteUser();
 
   return (
     <div className="flex flex-col gap-6">
@@ -262,7 +297,7 @@ export default function Users() {
           <h2 className="text-2xl font-bold text-slate-900">Người dùng</h2>
           <p className="mt-1 text-sm text-slate-500">{usersData?.meta.total ?? 0} người dùng</p>
         </div>
-        <Can permission="user.create">
+        <Can permission={PERMISSIONS.USER_CREATE}>
           <button
             onClick={() => setModal({ mode: "create" })}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
@@ -323,9 +358,19 @@ export default function Users() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : isError ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400">
-                  Đang tải...
+                <td colSpan={5} className="py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+                      <AlertCircle className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : usersData?.items.length === 0 ? (
@@ -379,7 +424,7 @@ export default function Users() {
                   <td className="px-4 py-3 text-slate-500">{formatDate(u.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Can permission="user.update">
+                      <Can permission={PERMISSIONS.USER_UPDATE}>
                         <button
                           onClick={() => setModal({ mode: "edit", user: u })}
                           className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
@@ -387,7 +432,7 @@ export default function Users() {
                           <Pencil className="h-4 w-4" />
                         </button>
                       </Can>
-                      <Can permission="user.delete">
+                      <Can permission={PERMISSIONS.USER_DELETE}>
                         <button
                           onClick={() => setDeleteId(u.id)}
                           className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
@@ -430,32 +475,29 @@ export default function Users() {
         />
       )}
 
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteId(null)} />
-          <div className="relative rounded-2xl bg-white p-6 shadow-2xl max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-slate-900">Xác nhận xóa</h3>
-            <p className="mt-2 text-sm text-slate-500">
-              Bạn có chắc muốn xóa người dùng này? Hành động không thể hoàn tác.
-            </p>
-            <div className="mt-4 flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteId)}
-                disabled={deleteMutation.isPending}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteDialog
+        open={!!deleteId}
+        title="Xác nhận xóa"
+        description="Bạn có chắc muốn xóa người dùng này?"
+        isPending={deleteMutation.isPending}
+        onConfirm={() =>
+          deleteMutation.mutate(deleteId!, {
+            onSuccess: () => {
+              emitToast("Đã xóa người dùng", "success");
+              setDeleteId(null);
+            },
+            onError: (err) => {
+              emitToast(
+                axios.isAxiosError(err)
+                  ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
+                  : "Có lỗi",
+                "error"
+              );
+            },
+          })
+        }
+        onClose={() => setDeleteId(null)}
+      />
     </div>
   );
 }

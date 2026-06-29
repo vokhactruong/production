@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { permissionsApi } from "../features/permissions/api/permissions.api";
+import { permissionKeys } from "../features/permissions/hooks/query-keys";
 import { getData } from "../lib/api-client";
 import { useAuthStore } from "../store/auth.store";
 import { PERMISSIONS } from "../constants/permissions";
@@ -29,7 +30,7 @@ function groupPermissions(permissions: Permission[]): Record<string, Permission[
 export default function Permissions() {
   const { hasPermission } = useAuthStore();
   const { data, isLoading } = useQuery({
-    queryKey: ["permissions"],
+    queryKey: permissionKeys.lists(),
     queryFn: () => permissionsApi.getAll(),
     enabled: hasPermission(PERMISSIONS.PERMISSION_READ),
   });

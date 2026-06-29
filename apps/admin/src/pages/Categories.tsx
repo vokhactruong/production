@@ -1,7 +1,12 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { DeleteDialog } from "../components/DeleteDialog";
 import { categoriesApi } from "../features/categories/api/categories.api";
+import { categoryKeys } from "../features/categories/hooks/query-keys";
+import { useCreateCategory } from "../features/categories/hooks/use-create-category";
+import { useUpdateCategory } from "../features/categories/hooks/use-update-category";
+import { useDeleteCategory } from "../features/categories/hooks/use-delete-category";
 import { getData } from "../lib/api-client";
 import { useAuthStore } from "../store/auth.store";
 import { PERMISSIONS } from "../constants/permissions";
@@ -12,8 +17,32 @@ import type { Category } from "../types";
 import axios from "axios";
 import slugify from "slugify";
 
+function SkeletonRow() {
+  return (
+    <tr className="animate-pulse">
+      <td className="px-4 py-3">
+        <div className="h-4 w-32 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3.5 w-24 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3.5 w-8 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="h-3 w-20 rounded bg-slate-200" />
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex justify-end gap-2">
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+          <div className="h-7 w-7 rounded-lg bg-slate-200" />
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function Categories() {
-  const qc = useQueryClient();
   const { emitToast } = useToast();
   const { hasPermission } = useAuthStore();
   const [modal, setModal] = useState<{ mode: "create" | "edit"; cat?: Category } | null>(null);
@@ -21,8 +50,8 @@ export default function Categories() {
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["categories"],
+  const { data, isLoading, isError } = useQuery({
+    queryKey: categoryKeys.lists(),
     queryFn: () => categoriesApi.getAll(),
     enabled: hasPermission(PERMISSIONS.CATEGORY_READ),
   });
@@ -43,48 +72,34 @@ export default function Categories() {
     setModal({ mode: "edit", cat });
   };
 
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      modal?.mode === "create"
-        ? categoriesApi.create({ name: formName, description: formDesc || undefined })
-        : categoriesApi.update(modal!.cat!.id, {
-            name: formName,
-            description: formDesc || undefined,
-          }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["categories"] });
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory(modal?.cat?.id ?? "");
+  const deleteMutation = useDeleteCategory();
+
+  const savePending =
+    modal?.mode === "create" ? createMutation.isPending : updateMutation.isPending;
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = { name: formName, description: formDesc || undefined };
+    const onSuccess = () => {
       emitToast(
         modal?.mode === "create" ? "Tạo danh mục thành công" : "Cập nhật thành công",
         "success"
       );
       setModal(null);
-    },
-    onError: (err) => {
+    };
+    const onError = (err: unknown) => {
       emitToast(
         axios.isAxiosError(err)
           ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
           : "Có lỗi",
         "error"
       );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => categoriesApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["categories"] });
-      emitToast("Đã xóa danh mục", "success");
-      setDeleteId(null);
-    },
-    onError: (err) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    },
-  });
+    };
+    if (modal?.mode === "create") createMutation.mutate(data, { onSuccess, onError });
+    else updateMutation.mutate(data, { onSuccess, onError });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -93,7 +108,7 @@ export default function Categories() {
           <h2 className="text-2xl font-bold text-slate-900">Danh mục</h2>
           <p className="mt-1 text-sm text-slate-500">{categories.length} danh mục</p>
         </div>
-        <Can permission="category.create">
+        <Can permission={PERMISSIONS.CATEGORY_CREATE}>
           <button
             onClick={openCreate}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
@@ -126,9 +141,19 @@ export default function Categories() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : isError ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400">
-                  Đang tải...
+                <td colSpan={5} className="py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+                      <AlertCircle className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : categories.length === 0 ? (
@@ -150,7 +175,7 @@ export default function Categories() {
                   <td className="px-4 py-3 text-slate-500">{formatDate(cat.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Can permission="category.update">
+                      <Can permission={PERMISSIONS.CATEGORY_UPDATE}>
                         <button
                           onClick={() => openEdit(cat)}
                           className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
@@ -158,7 +183,7 @@ export default function Categories() {
                           <Pencil className="h-4 w-4" />
                         </button>
                       </Can>
-                      <Can permission="category.delete">
+                      <Can permission={PERMISSIONS.CATEGORY_DELETE}>
                         <button
                           onClick={() => setDeleteId(cat.id)}
                           className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
@@ -177,23 +202,24 @@ export default function Categories() {
 
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setModal(null)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={!savePending ? () => setModal(null) : undefined}
+          />
           <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b px-6 py-4">
               <h2 className="text-lg font-semibold">
                 {modal.mode === "create" ? "Tạo danh mục" : "Sửa danh mục"}
               </h2>
-              <button onClick={() => setModal(null)} className="rounded-lg p-1 hover:bg-slate-100">
+              <button
+                onClick={() => setModal(null)}
+                disabled={savePending}
+                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
+              >
                 ✕
               </button>
             </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveMutation.mutate();
-              }}
-              className="p-6 flex flex-col gap-4"
-            >
+            <form onSubmit={handleSave} className="p-6 flex flex-col gap-4">
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
                   Tên danh mục
@@ -223,16 +249,17 @@ export default function Categories() {
                 <button
                   type="button"
                   onClick={() => setModal(null)}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  disabled={savePending}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Huỷ
                 </button>
                 <button
                   type="submit"
-                  disabled={saveMutation.isPending}
+                  disabled={savePending}
                   className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {saveMutation.isPending ? "Đang lưu..." : "Lưu"}
+                  {savePending ? "Đang lưu..." : "Lưu"}
                 </button>
               </div>
             </form>
@@ -240,32 +267,29 @@ export default function Categories() {
         </div>
       )}
 
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteId(null)} />
-          <div className="relative rounded-2xl bg-white p-6 shadow-2xl max-w-sm w-full">
-            <h3 className="text-lg font-semibold">Xóa danh mục?</h3>
-            <p className="mt-2 text-sm text-slate-500">
-              Danh mục không thể xóa nếu còn bài viết đang dùng.
-            </p>
-            <div className="mt-4 flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteId)}
-                disabled={deleteMutation.isPending}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteDialog
+        open={!!deleteId}
+        title="Xóa danh mục?"
+        description="Danh mục không thể xóa nếu còn bài viết đang dùng."
+        isPending={deleteMutation.isPending}
+        onConfirm={() =>
+          deleteMutation.mutate(deleteId!, {
+            onSuccess: () => {
+              emitToast("Đã xóa danh mục", "success");
+              setDeleteId(null);
+            },
+            onError: (err) => {
+              emitToast(
+                axios.isAxiosError(err)
+                  ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
+                  : "Có lỗi",
+                "error"
+              );
+            },
+          })
+        }
+        onClose={() => setDeleteId(null)}
+      />
     </div>
   );
 }

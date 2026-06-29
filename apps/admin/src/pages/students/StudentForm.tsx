@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import axios from "axios";
 import { useStudent } from "../../features/students/hooks/use-student";
 import { useCreateStudent } from "../../features/students/hooks/use-create-student";
@@ -176,7 +176,12 @@ export default function StudentForm() {
 
   const selectedStatus = watch("status");
 
-  const { data: student, isLoading: isFetching } = useStudent(isEdit ? id : undefined);
+  const {
+    data: student,
+    isLoading: isFetching,
+    isError: isFetchError,
+    refetch,
+  } = useStudent(isEdit ? id : undefined);
   const createStudent = useCreateStudent();
   const updateStudent = useUpdateStudent(id ?? "");
 
@@ -207,6 +212,49 @@ export default function StudentForm() {
         <div className="flex flex-col items-center gap-3">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500" />
           <span className="text-sm">Đang tải dữ liệu...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isEdit && isFetchError) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-6 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => navigate("/students")}
+            className="flex items-center justify-center rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            aria-label="Quay lại"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h2 className="text-2xl font-bold text-slate-900">Chỉnh sửa học sinh</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-20 shadow-sm">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
+            <AlertCircle className="h-7 w-7 text-red-400" />
+          </div>
+          <p className="mt-4 text-sm font-semibold text-slate-700">
+            Không thể tải thông tin học sinh
+          </p>
+          <p className="mt-1 text-xs text-slate-400">Vui lòng thử lại hoặc quay về danh sách</p>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/students")}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Quay lại danh sách
+            </button>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              Thử lại
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -1,7 +1,10 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Users, FileText, Tag, Shield, Key } from "lucide-react";
+import { Users, FileText, Tag, Shield, Key, AlertCircle } from "lucide-react";
 import { dashboardApi } from "../features/dashboard/api/dashboard.api";
+import { dashboardKeys } from "../features/dashboard/hooks/query-keys";
+import { useAuthStore } from "../store/auth.store";
+import { PERMISSIONS } from "../constants/permissions";
 import { cn, formatDate } from "../utils";
 
 function StatCard({
@@ -44,10 +47,30 @@ const STATUS_LABEL: Record<string, string> = {
   ARCHIVED: "Lưu trữ",
 };
 
+function SkeletonStatCard() {
+  return (
+    <div className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="h-3 w-24 rounded bg-slate-200" />
+          <div className="mt-3 h-8 w-16 rounded-lg bg-slate-200" />
+        </div>
+        <div className="h-12 w-12 shrink-0 rounded-2xl bg-slate-200" />
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { data: stats } = useQuery({
-    queryKey: ["dashboard-stats"],
+  const { hasPermission } = useAuthStore();
+  const {
+    data: stats,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: dashboardKeys.stats(),
     queryFn: () => dashboardApi.getStats(),
+    enabled: hasPermission(PERMISSIONS.DASHBOARD_VIEW),
   });
 
   return (
@@ -58,30 +81,54 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {stats?.userCount !== null && stats?.userCount !== undefined && (
-          <StatCard
-            title="Tổng người dùng"
-            value={stats.userCount}
-            icon={Users}
-            color="bg-blue-500"
-          />
-        )}
-        {stats?.roleCount !== null && stats?.roleCount !== undefined && (
-          <StatCard title="Vai trò" value={stats.roleCount} icon={Shield} color="bg-indigo-500" />
-        )}
-        {stats?.permCount !== null && stats?.permCount !== undefined && (
-          <StatCard title="Quyền hạn" value={stats.permCount} icon={Key} color="bg-purple-500" />
-        )}
-        {stats?.catCount !== null && stats?.catCount !== undefined && (
-          <StatCard title="Danh mục" value={stats.catCount} icon={Tag} color="bg-green-500" />
-        )}
-        {stats?.recentArticles !== null && stats?.recentArticles !== undefined && (
-          <StatCard
-            title="Bài viết gần đây"
-            value={stats.recentArticles.length}
-            icon={FileText}
-            color="bg-orange-500"
-          />
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => <SkeletonStatCard key={i} />)
+        ) : isError ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-16">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <p className="mt-3 text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
+            <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
+          </div>
+        ) : (
+          <>
+            {stats?.userCount !== null && stats?.userCount !== undefined && (
+              <StatCard
+                title="Tổng người dùng"
+                value={stats.userCount}
+                icon={Users}
+                color="bg-blue-500"
+              />
+            )}
+            {stats?.roleCount !== null && stats?.roleCount !== undefined && (
+              <StatCard
+                title="Vai trò"
+                value={stats.roleCount}
+                icon={Shield}
+                color="bg-indigo-500"
+              />
+            )}
+            {stats?.permCount !== null && stats?.permCount !== undefined && (
+              <StatCard
+                title="Quyền hạn"
+                value={stats.permCount}
+                icon={Key}
+                color="bg-purple-500"
+              />
+            )}
+            {stats?.catCount !== null && stats?.catCount !== undefined && (
+              <StatCard title="Danh mục" value={stats.catCount} icon={Tag} color="bg-green-500" />
+            )}
+            {stats?.recentArticles !== null && stats?.recentArticles !== undefined && (
+              <StatCard
+                title="Bài viết gần đây"
+                value={stats.recentArticles.length}
+                icon={FileText}
+                color="bg-orange-500"
+              />
+            )}
+          </>
         )}
       </div>
 

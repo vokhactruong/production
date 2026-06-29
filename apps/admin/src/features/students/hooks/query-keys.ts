@@ -5,6 +5,7 @@ export const studentKeys = {
     [...studentKeys.lists(), filters] as const,
   details: () => [...studentKeys.all, "detail"] as const,
   detail: (id: string) => [...studentKeys.details(), id] as const,
+  activity: (id: string) => [...studentKeys.detail(id), "activity"] as const,
 };
 
 export const auditLogKeys = {

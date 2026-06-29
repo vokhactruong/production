@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { ImageIcon, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ImageIcon, X, AlertCircle } from "lucide-react";
 import { articlesApi } from "../../features/articles/api/articles.api";
 import { categoriesApi } from "../../features/categories/api/categories.api";
+import { articleKeys } from "../../features/articles/hooks/query-keys";
+import { categoryKeys } from "../../features/categories/hooks/query-keys";
+import { useCreateArticle } from "../../features/articles/hooks/use-create-article";
+import { useUpdateArticle } from "../../features/articles/hooks/use-update-article";
 import { uploadApi } from "../../features/upload/api/upload.api";
 import { getData } from "../../lib/api-client";
 import { useToast } from "../../components/Toast";
 import RichEditor from "../../components/editor/RichEditor";
 import { cn } from "../../utils";
-import type { Article, Category } from "../../types";
+import type { Article, ArticleStatus, Category } from "../../types";
 import slugify from "slugify";
 import axios from "axios";
 
@@ -38,14 +42,19 @@ export default function ArticleForm() {
 
   const slugPreview = title ? slugify(title, { lower: true, strict: true, locale: "vi" }) : "";
 
-  const { data: articleData } = useQuery({
-    queryKey: ["article", id],
+  const {
+    data: articleData,
+    isLoading: isFetchingArticle,
+    isError: isArticleError,
+    refetch: refetchArticle,
+  } = useQuery({
+    queryKey: articleKeys.detail(id ?? ""),
     queryFn: () => articlesApi.getAdminOne(id!),
     enabled: isEdit,
   });
 
   const { data: catsData } = useQuery({
-    queryKey: ["categories"],
+    queryKey: categoryKeys.lists(),
     queryFn: () => categoriesApi.getAll(),
   });
   const categories = catsData ? getData<Category[]>(catsData) : [];
@@ -116,45 +125,55 @@ export default function ArticleForm() {
     setThumbnailPublicId("");
   };
 
-  const saveMutation = useMutation({
-    mutationFn: (s: typeof status) => {
-      const payload = isEdit
-        ? {
-            title,
-            excerpt: excerpt || undefined,
-            content,
-            thumbnail: thumbnail || null,
-            thumbnailPublicId: thumbnailPublicId || null,
-            categoryId: categoryId || undefined,
-            tags,
-            status: s,
-          }
-        : {
-            title,
-            excerpt: excerpt || undefined,
-            content,
-            thumbnail: thumbnail || undefined,
-            thumbnailPublicId: thumbnailPublicId || undefined,
-            categoryId: categoryId || undefined,
-            tags,
-            status: s,
-          };
-      return isEdit ? articlesApi.update(id!, payload) : articlesApi.create(payload);
-    },
-    onSuccess: () => {
-      pendingPublicIdRef.current = null; // ảnh đã được commit vào DB
+  const createMutation = useCreateArticle();
+  const updateMutation = useUpdateArticle(id ?? "");
+  const isPending = isEdit ? updateMutation.isPending : createMutation.isPending;
+
+  const handleSave = (s: ArticleStatus) => {
+    const onSuccess = () => {
+      pendingPublicIdRef.current = null;
       emitToast(isEdit ? "Đã cập nhật bài viết" : "Đã tạo bài viết", "success");
       navigate("/articles");
-    },
-    onError: (err) => {
+    };
+    const onError = (err: unknown) => {
       emitToast(
         axios.isAxiosError(err)
           ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
           : "Có lỗi",
         "error"
       );
-    },
-  });
+    };
+
+    if (isEdit) {
+      updateMutation.mutate(
+        {
+          title,
+          excerpt: excerpt || undefined,
+          content,
+          thumbnail: thumbnail || null,
+          thumbnailPublicId: thumbnailPublicId || null,
+          categoryId: categoryId || undefined,
+          tags,
+          status: s,
+        },
+        { onSuccess, onError }
+      );
+    } else {
+      createMutation.mutate(
+        {
+          title,
+          excerpt: excerpt || undefined,
+          content,
+          thumbnail: thumbnail || undefined,
+          thumbnailPublicId: thumbnailPublicId || undefined,
+          categoryId: categoryId || undefined,
+          tags,
+          status: s,
+        },
+        { onSuccess, onError }
+      );
+    }
+  };
 
   const addTag = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -166,6 +185,54 @@ export default function ArticleForm() {
       }
     }
   };
+
+  if (isEdit && isFetchingArticle) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500" />
+          <span className="text-sm text-slate-400">Đang tải dữ liệu...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isEdit && isArticleError) {
+    return (
+      <div className="flex flex-col gap-6 max-w-4xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Chỉnh sửa bài viết</h2>
+          <button
+            onClick={() => navigate("/articles")}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            ← Quay lại
+          </button>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-20">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
+            <AlertCircle className="h-7 w-7 text-red-400" />
+          </div>
+          <p className="mt-4 text-sm font-semibold text-slate-700">Không thể tải bài viết</p>
+          <p className="mt-1 text-xs text-slate-400">Vui lòng thử lại hoặc quay về danh sách</p>
+          <div className="mt-5 flex gap-3">
+            <button
+              onClick={() => navigate("/articles")}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Quay lại danh sách
+            </button>
+            <button
+              onClick={() => refetchArticle()}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
@@ -250,16 +317,16 @@ export default function ArticleForm() {
             <div className="flex flex-col gap-2">
               <button
                 type="button"
-                onClick={() => saveMutation.mutate("DRAFT")}
-                disabled={saveMutation.isPending || isUploading}
+                onClick={() => handleSave("DRAFT")}
+                disabled={isPending || isUploading}
                 className="h-10 w-full rounded-xl border border-slate-300 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
               >
-                {saveMutation.isPending ? "Đang lưu..." : "Lưu nháp"}
+                {isPending ? "Đang lưu..." : "Lưu nháp"}
               </button>
               <button
                 type="button"
-                onClick={() => saveMutation.mutate(status)}
-                disabled={saveMutation.isPending || isUploading}
+                onClick={() => handleSave(status)}
+                disabled={isPending || isUploading}
                 className="h-10 w-full rounded-xl bg-slate-800 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
               >
                 Lưu

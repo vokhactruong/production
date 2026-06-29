@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, ShieldCheck } from "lucide-react";
-import { rolesApi } from "../features/roles/api/roles.api";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, ShieldCheck, AlertCircle } from "lucide-react";
+import { DeleteDialog } from "../components/DeleteDialog";
 import { permissionsApi } from "../features/permissions/api/permissions.api";
+import { rolesApi } from "../features/roles/api/roles.api";
+import { roleKeys } from "../features/roles/hooks/query-keys";
+import { permissionKeys } from "../features/permissions/hooks/query-keys";
+import { useCreateRole } from "../features/roles/hooks/use-create-role";
+import { useUpdateRole } from "../features/roles/hooks/use-update-role";
+import { useAssignRolePermissions } from "../features/roles/hooks/use-assign-role-permissions";
+import { useDeleteRole } from "../features/roles/hooks/use-delete-role";
 import { getData } from "../lib/api-client";
 import { useAuthStore } from "../store/auth.store";
 import { PERMISSIONS } from "../constants/permissions";
@@ -33,8 +40,28 @@ function groupPermissions(permissions: Permission[]) {
   return groups;
 }
 
+function SkeletonCard() {
+  return (
+    <div className="animate-pulse rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="h-4 w-32 rounded bg-slate-200" />
+          <div className="mt-2 h-3 w-48 rounded bg-slate-200" />
+        </div>
+      </div>
+      <div className="mt-4 flex gap-4">
+        <div className="h-3 w-20 rounded bg-slate-200" />
+        <div className="h-3 w-12 rounded bg-slate-200" />
+      </div>
+      <div className="mt-4 flex gap-2">
+        <div className="h-7 w-24 rounded-xl bg-slate-200" />
+        <div className="h-7 w-16 rounded-xl bg-slate-200" />
+      </div>
+    </div>
+  );
+}
+
 export default function Roles() {
-  const qc = useQueryClient();
   const { emitToast } = useToast();
   const { hasPermission } = useAuthStore();
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,13 +72,17 @@ export default function Roles() {
   const [formDesc, setFormDesc] = useState("");
   const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
 
-  const { data: rolesData } = useQuery({
-    queryKey: ["roles"],
+  const {
+    data: rolesData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: roleKeys.lists(),
     queryFn: () => rolesApi.getAll(),
     enabled: hasPermission(PERMISSIONS.ROLE_READ),
   });
   const { data: permsData } = useQuery({
-    queryKey: ["permissions"],
+    queryKey: permissionKeys.lists(),
     queryFn: () => permissionsApi.getAll(),
     enabled: hasPermission(PERMISSIONS.PERMISSION_READ),
   });
@@ -75,73 +106,18 @@ export default function Roles() {
     setAssignRole(role);
   };
 
-  const createMutation = useMutation({
-    mutationFn: () => rolesApi.create({ name: formName, description: formDesc }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["roles"] });
-      emitToast("Tạo vai trò thành công", "success");
-      setCreateOpen(false);
-    },
-    onError: (err) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    },
-  });
+  const createMutation = useCreateRole();
+  const updateMutation = useUpdateRole(editRole?.id ?? "");
+  const assignMutation = useAssignRolePermissions(assignRole?.id ?? "");
+  const deleteMutation = useDeleteRole();
 
-  const updateMutation = useMutation({
-    mutationFn: () => rolesApi.update(editRole!.id, { name: formName, description: formDesc }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["roles"] });
-      emitToast("Cập nhật thành công", "success");
-      setEditRole(null);
-    },
-    onError: (err) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    },
-  });
-
-  const assignMutation = useMutation({
-    mutationFn: () => rolesApi.assignPermissions(assignRole!.id, selectedPerms),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["roles"] });
-      emitToast("Gán quyền thành công", "success");
-      setAssignRole(null);
-    },
-    onError: (err) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => rolesApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["roles"] });
-      emitToast("Đã xóa vai trò", "success");
-      setDeleteId(null);
-    },
-    onError: (err) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    },
-  });
+  const toastError = (err: unknown) =>
+    emitToast(
+      axios.isAxiosError(err)
+        ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
+        : "Có lỗi",
+      "error"
+    );
 
   const togglePerm = (id: string) =>
     setSelectedPerms((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
@@ -160,7 +136,7 @@ export default function Roles() {
           <h2 className="text-2xl font-bold text-slate-900">Vai trò</h2>
           <p className="mt-1 text-sm text-slate-500">{roles.length} vai trò</p>
         </div>
-        <Can permission="role.create">
+        <Can permission={PERMISSIONS.ROLE_CREATE}>
           <button
             onClick={openCreate}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
@@ -170,69 +146,93 @@ export default function Roles() {
         </Can>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {roles.map((role) => (
-          <div key={role.id} className="rounded-2xl bg-white border border-slate-200 p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900">{role.name}</h3>
-                  {role.isSystem && (
-                    <span className="rounded-lg bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                      System
-                    </span>
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 py-16 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
+              <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {roles.map((role) => (
+            <div key={role.id} className="rounded-2xl bg-white border border-slate-200 p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-slate-900">{role.name}</h3>
+                    {role.isSystem && (
+                      <span className="rounded-lg bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                        System
+                      </span>
+                    )}
+                  </div>
+                  {role.description && (
+                    <p className="mt-1 text-sm text-slate-500">{role.description}</p>
                   )}
                 </div>
-                {role.description && (
-                  <p className="mt-1 text-sm text-slate-500">{role.description}</p>
+              </div>
+              <div className="mt-4 flex gap-4 text-sm text-slate-500">
+                <span>{role._count?.userRoles ?? 0} người dùng</span>
+                <span>{role.permissions?.length ?? 0} quyền</span>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Can permission={PERMISSIONS.PERMISSION_ASSIGN}>
+                  <button
+                    onClick={() => openAssign(role)}
+                    className="flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <ShieldCheck className="h-3 w-3" /> Phân quyền
+                  </button>
+                </Can>
+                <Can permission={PERMISSIONS.ROLE_UPDATE}>
+                  <button
+                    onClick={() => openEdit(role)}
+                    className="flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <Pencil className="h-3 w-3" /> Sửa
+                  </button>
+                </Can>
+                {!role.isSystem && (
+                  <Can permission={PERMISSIONS.ROLE_DELETE}>
+                    <button
+                      onClick={() => setDeleteId(role.id)}
+                      className="flex items-center gap-1 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3" /> Xóa
+                    </button>
+                  </Can>
                 )}
               </div>
             </div>
-            <div className="mt-4 flex gap-4 text-sm text-slate-500">
-              <span>{role._count?.userRoles ?? 0} người dùng</span>
-              <span>{role.permissions?.length ?? 0} quyền</span>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Can permission="permission.assign">
-                <button
-                  onClick={() => openAssign(role)}
-                  className="flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  <ShieldCheck className="h-3 w-3" /> Phân quyền
-                </button>
-              </Can>
-              <Can permission="role.update">
-                <button
-                  onClick={() => openEdit(role)}
-                  className="flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  <Pencil className="h-3 w-3" /> Sửa
-                </button>
-              </Can>
-              {!role.isSystem && (
-                <Can permission="role.delete">
-                  <button
-                    onClick={() => setDeleteId(role.id)}
-                    className="flex items-center gap-1 rounded-xl border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-3 w-3" /> Xóa
-                  </button>
-                </Can>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {(createOpen || editRole) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => {
-              setCreateOpen(false);
-              setEditRole(null);
-            }}
+            onClick={
+              !createMutation.isPending && !updateMutation.isPending
+                ? () => {
+                    setCreateOpen(false);
+                    setEditRole(null);
+                  }
+                : undefined
+            }
           />
           <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b px-6 py-4">
@@ -244,7 +244,8 @@ export default function Roles() {
                   setCreateOpen(false);
                   setEditRole(null);
                 }}
-                className="rounded-lg p-1 hover:bg-slate-100"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
               >
                 ✕
               </button>
@@ -252,7 +253,24 @@ export default function Roles() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                createOpen ? createMutation.mutate() : updateMutation.mutate();
+                const data = { name: formName, description: formDesc || undefined };
+                if (createOpen) {
+                  createMutation.mutate(data, {
+                    onSuccess: () => {
+                      emitToast("Tạo vai trò thành công", "success");
+                      setCreateOpen(false);
+                    },
+                    onError: toastError,
+                  });
+                } else {
+                  updateMutation.mutate(data, {
+                    onSuccess: () => {
+                      emitToast("Cập nhật thành công", "success");
+                      setEditRole(null);
+                    },
+                    onError: toastError,
+                  });
+                }
               }}
               className="p-6 flex flex-col gap-4"
             >
@@ -281,7 +299,8 @@ export default function Roles() {
                     setCreateOpen(false);
                     setEditRole(null);
                   }}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Huỷ
                 </button>
@@ -301,13 +320,17 @@ export default function Roles() {
       {/* Assign Permissions Modal */}
       {assignRole && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setAssignRole(null)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={!assignMutation.isPending ? () => setAssignRole(null) : undefined}
+          />
           <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b px-6 py-4">
               <h2 className="text-lg font-semibold">Phân quyền — {assignRole.name}</h2>
               <button
                 onClick={() => setAssignRole(null)}
-                className="rounded-lg p-1 hover:bg-slate-100"
+                disabled={assignMutation.isPending}
+                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
               >
                 ✕
               </button>
@@ -353,12 +376,21 @@ export default function Roles() {
             <div className="flex justify-end gap-3 border-t px-6 py-4">
               <button
                 onClick={() => setAssignRole(null)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                disabled={assignMutation.isPending}
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
               >
                 Huỷ
               </button>
               <button
-                onClick={() => assignMutation.mutate()}
+                onClick={() =>
+                  assignMutation.mutate(selectedPerms, {
+                    onSuccess: () => {
+                      emitToast("Gán quyền thành công", "success");
+                      setAssignRole(null);
+                    },
+                    onError: toastError,
+                  })
+                }
                 disabled={assignMutation.isPending}
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
@@ -369,30 +401,21 @@ export default function Roles() {
         </div>
       )}
 
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteId(null)} />
-          <div className="relative rounded-2xl bg-white p-6 shadow-2xl max-w-sm w-full">
-            <h3 className="text-lg font-semibold">Xác nhận xóa vai trò?</h3>
-            <p className="mt-2 text-sm text-slate-500">Hành động này không thể hoàn tác.</p>
-            <div className="mt-4 flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteId)}
-                disabled={deleteMutation.isPending}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteDialog
+        open={!!deleteId}
+        title="Xác nhận xóa vai trò?"
+        isPending={deleteMutation.isPending}
+        onConfirm={() =>
+          deleteMutation.mutate(deleteId!, {
+            onSuccess: () => {
+              emitToast("Đã xóa vai trò", "success");
+              setDeleteId(null);
+            },
+            onError: toastError,
+          })
+        }
+        onClose={() => setDeleteId(null)}
+      />
     </div>
   );
 }
