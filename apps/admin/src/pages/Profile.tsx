@@ -112,7 +112,7 @@ export default function Profile() {
       </div>
 
       <div className="rounded-2xl bg-white border border-slate-200 p-8">
-        <div className="flex items-center gap-6 mb-8">
+        <div className="flex flex-col gap-6 mb-8 sm:flex-row sm:items-center">
           {/* Avatar upload */}
           <div className="relative flex-shrink-0">
             {avatar ? (
@@ -189,7 +189,7 @@ export default function Profile() {
         </div>
 
         <form onSubmit={handleSave} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Họ</label>
               <input

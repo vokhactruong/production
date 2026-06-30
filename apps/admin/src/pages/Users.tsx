@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Search, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { DeleteDialog } from "../components/DeleteDialog";
 import { usersApi } from "../features/users/api/users.api";
 import { rolesApi } from "../features/roles/api/roles.api";
@@ -101,114 +101,114 @@ function UserModal({ mode, user, roles, onClose }: UserModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
       <div className="absolute inset-0 bg-black/50" onClick={!isPending ? onClose : undefined} />
-      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0">
           <h2 className="text-lg font-semibold">
             {mode === "create" ? "Tạo người dùng" : "Sửa người dùng"}
           </h2>
           <button
             onClick={onClose}
             disabled={isPending}
-            className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
+            className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+            aria-label="Đóng"
           >
             ✕
           </button>
         </div>
-        <form
-          onSubmit={handleSubmit}
-          className="overflow-y-auto max-h-[70vh] p-6 flex flex-col gap-4"
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Họ</label>
-              <input
-                required
-                value={form.firstName}
-                onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
-                className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tên</label>
-              <input
-                required
-                value={form.lastName}
-                onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
-                className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          {mode === "create" && (
-            <>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="overflow-y-auto flex-1 p-6 flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Họ</label>
                 <input
                   required
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  value={form.firstName}
+                  onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
                   className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Tên</label>
                 <input
                   required
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                  value={form.lastName}
+                  onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
                   className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-            </>
-          )}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Trạng thái</label>
-            <select
-              value={form.status}
-              onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as UserStatus }))}
-              className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="INACTIVE">Không hoạt động</option>
-              <option value="SUSPENDED">Bị khoá</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Vai trò</label>
-            <div className="flex flex-wrap gap-2">
-              {roles.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => toggleRole(r.id)}
-                  className={cn(
-                    "rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors",
-                    form.roleIds.includes(r.id)
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  {r.name}
-                </button>
-              ))}
+            </div>
+            {mode === "create" && (
+              <>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                  <input
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                    className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</label>
+                  <input
+                    required
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                    className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Trạng thái</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as UserStatus }))}
+                className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ACTIVE">Hoạt động</option>
+                <option value="INACTIVE">Không hoạt động</option>
+                <option value="SUSPENDED">Bị khoá</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Vai trò</label>
+              <div className="flex flex-wrap gap-2">
+                {roles.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => toggleRole(r.id)}
+                    className={cn(
+                      "rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors",
+                      form.roleIds.includes(r.id)
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                    )}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
             >
               Huỷ
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {isPending ? "Đang lưu..." : mode === "create" ? "Tạo" : "Lưu"}
             </button>
@@ -231,13 +231,13 @@ function SkeletonRow() {
           </div>
         </div>
       </td>
-      <td className="px-4 py-3">
+      <td className="hidden px-4 py-3 sm:table-cell">
         <div className="h-5 w-16 rounded-full bg-slate-200" />
       </td>
       <td className="px-4 py-3">
         <div className="h-5 w-16 rounded-full bg-slate-200" />
       </td>
-      <td className="px-4 py-3">
+      <td className="hidden px-4 py-3 md:table-cell">
         <div className="h-3 w-24 rounded bg-slate-200" />
       </td>
       <td className="px-4 py-3">
@@ -302,12 +302,14 @@ export default function Users() {
             onClick={() => setModal({ mode: "create" })}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
           >
-            <Plus className="h-4 w-4" /> Tạo mới
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Tạo mới</span>
           </button>
         </Can>
       </div>
 
-      <div className="flex gap-3">
+      {/* Filters */}
+      <div className="flex flex-col gap-2.5 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -335,134 +337,171 @@ export default function Users() {
         </select>
       </div>
 
+      {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Người dùng
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Vai trò
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Trạng thái
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Ngày tạo
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Hành động
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
-            ) : isError ? (
-              <tr>
-                <td colSpan={5} className="py-20 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
-                      <AlertCircle className="h-6 w-6 text-red-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
-                      <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
-                    </div>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Người dùng
+                </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:table-cell">
+                  Vai trò
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Trạng thái
+                </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 md:table-cell">
+                  Ngày tạo
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Hành động
+                </th>
               </tr>
-            ) : usersData?.items.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400">
-                  Không có dữ liệu
-                </td>
-              </tr>
-            ) : (
-              usersData?.items.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 text-xs font-semibold text-white">
-                        {u.avatar ? (
-                          <img src={u.avatar} className="h-8 w-8 rounded-full object-cover" />
-                        ) : (
-                          getInitials(u.firstName, u.lastName)
-                        )}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+              ) : isError ? (
+                <tr>
+                  <td colSpan={5} className="py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+                        <AlertCircle className="h-6 w-6 text-red-400" />
                       </div>
                       <div>
-                        <p className="font-medium text-slate-900">
-                          {u.firstName} {u.lastName}
-                        </p>
-                        <p className="text-xs text-slate-500">{u.email}</p>
+                        <p className="text-sm font-medium text-slate-600">Không thể tải dữ liệu</p>
+                        <p className="mt-0.5 text-xs text-slate-400">Vui lòng thử lại sau</p>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {u.roles?.map((r) => (
-                        <span
-                          key={r.id}
-                          className="rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
-                        >
-                          {r.name}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        "rounded-lg px-2.5 py-0.5 text-xs font-medium",
-                        STATUS_BADGE[u.status as UserStatus]
-                      )}
-                    >
-                      {STATUS_LABEL[u.status as UserStatus]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">{formatDate(u.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <Can permission={PERMISSIONS.USER_UPDATE}>
-                        <button
-                          onClick={() => setModal({ mode: "edit", user: u })}
-                          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      </Can>
-                      <Can permission={PERMISSIONS.USER_DELETE}>
-                        <button
-                          onClick={() => setDeleteId(u.id)}
-                          className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </Can>
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : usersData?.items.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              ) : (
+                usersData?.items.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 text-xs font-semibold text-white">
+                          {u.avatar ? (
+                            <img
+                              src={u.avatar}
+                              alt={`${u.firstName} ${u.lastName}`}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            getInitials(u.firstName, u.lastName)
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 truncate">
+                            {u.firstName} {u.lastName}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden px-4 py-3 sm:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {u.roles?.map((r) => (
+                          <span
+                            key={r.id}
+                            className="rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+                          >
+                            {r.name}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "rounded-lg px-2.5 py-0.5 text-xs font-medium",
+                          STATUS_BADGE[u.status as UserStatus]
+                        )}
+                      >
+                        {STATUS_LABEL[u.status as UserStatus]}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-3 text-slate-500 md:table-cell">
+                      {formatDate(u.createdAt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <Can permission={PERMISSIONS.USER_UPDATE}>
+                          <button
+                            onClick={() => setModal({ mode: "edit", user: u })}
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 transition-colors"
+                            aria-label={`Sửa ${u.firstName} ${u.lastName}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        </Can>
+                        <Can permission={PERMISSIONS.USER_DELETE}>
+                          <button
+                            onClick={() => setDeleteId(u.id)}
+                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 transition-colors"
+                            aria-label={`Xoá ${u.firstName} ${u.lastName}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </Can>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Pagination */}
       {usersData && usersData.meta.totalPages > 1 && (
-        <div className="flex justify-center gap-1">
-          {Array.from({ length: usersData.meta.totalPages }, (_, i) => i + 1).map((p) => (
+        <div className="flex items-center justify-center gap-1">
+          {/* Mobile: compact */}
+          <div className="flex items-center gap-2 sm:hidden">
             <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg text-sm",
-                page === p ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
-              )}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              {p}
+              <ChevronLeft className="h-4 w-4" />
             </button>
-          ))}
+            <span className="text-sm text-slate-600">
+              Trang {page} / {usersData.meta.totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(usersData.meta.totalPages, p + 1))}
+              disabled={page === usersData.meta.totalPages}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          {/* Desktop: full */}
+          <div className="hidden sm:flex gap-1">
+            {Array.from({ length: Math.min(usersData.meta.totalPages, 10) }, (_, i) => i + 1).map(
+              (p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors",
+                    page === p ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                  )}
+                >
+                  {p}
+                </button>
+              )
+            )}
+          </div>
         </div>
       )}
 

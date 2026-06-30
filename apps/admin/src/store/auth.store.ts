@@ -61,8 +61,11 @@ export const useAuthStore = create<AuthState>()(
 
 interface UIState {
   sidebarCollapsed: boolean;
+  sidebarOpen: boolean;
   theme: "light" | "dark";
   toggleSidebar: () => void;
+  openSidebar: () => void;
+  closeSidebar: () => void;
   setTheme: (t: "light" | "dark") => void;
 }
 
@@ -70,13 +73,19 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarCollapsed: false,
+      sidebarOpen: false,
       theme: "light",
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      openSidebar: () => set({ sidebarOpen: true }),
+      closeSidebar: () => set({ sidebarOpen: false }),
       setTheme: (theme) => {
         document.documentElement.classList.toggle("dark", theme === "dark");
         set({ theme });
       },
     }),
-    { name: "ui-store" }
+    {
+      name: "ui-store",
+      partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed, theme: s.theme }),
+    }
   )
 );

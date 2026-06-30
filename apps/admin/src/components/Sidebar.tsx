@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -13,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  X,
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
@@ -49,8 +51,16 @@ const MENU = [
 
 export default function Sidebar() {
   const { hasPermission, user } = useAuthStore();
-  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { sidebarCollapsed, toggleSidebar, sidebarOpen, closeSidebar } = useUIStore();
   const handleLogout = () => authManager.logout();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && sidebarOpen) closeSidebar();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [sidebarOpen, closeSidebar]);
 
   const visibleMenu = MENU.filter(
     (item) => item.permission === null || hasPermission(item.permission)
@@ -60,7 +70,14 @@ export default function Sidebar() {
     <aside
       className={cn(
         "flex h-screen flex-col border-r border-slate-200 bg-white transition-all duration-300",
-        sidebarCollapsed ? "w-16" : "w-64"
+        // Mobile/tablet: fixed overlay drawer
+        "fixed inset-y-0 left-0 z-50",
+        sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full",
+        // Desktop: static in-flow, always visible
+        "lg:static lg:inset-auto lg:translate-x-0 lg:shadow-none lg:z-auto",
+        // Width: mobile always w-64, desktop respects collapsed state
+        "w-64",
+        sidebarCollapsed && "lg:w-16"
       )}
     >
       {/* Logo */}
@@ -75,12 +92,21 @@ export default function Sidebar() {
             />
           </svg>
         </div>
-        {!sidebarCollapsed && (
-          <div className="overflow-hidden">
-            <p className="truncate text-sm font-bold text-slate-900">School Portal</p>
-            <p className="truncate text-xs text-slate-500">Admin</p>
-          </div>
-        )}
+
+        {/* Title — always shown on mobile, hidden on desktop when collapsed */}
+        <div className={cn("flex-1 overflow-hidden", sidebarCollapsed && "lg:hidden")}>
+          <p className="truncate text-sm font-bold text-slate-900">School Portal</p>
+          <p className="truncate text-xs text-slate-500">Admin</p>
+        </div>
+
+        {/* Close button — mobile/tablet only */}
+        <button
+          onClick={closeSidebar}
+          className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          aria-label="Đóng menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -89,6 +115,7 @@ export default function Sidebar() {
           <NavLink
             key={item.href}
             to={item.href}
+            onClick={closeSidebar}
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors mb-1",
@@ -100,15 +127,22 @@ export default function Sidebar() {
             title={sidebarCollapsed ? item.label : undefined}
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+            {/* Label: always show on mobile, hide on desktop when collapsed */}
+            <span className={cn("truncate", sidebarCollapsed && "lg:hidden")}>{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
       {/* Footer */}
       <div className="border-t border-slate-200 p-2">
-        {!sidebarCollapsed && user && (
-          <div className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2">
+        {/* User info: always show on mobile, hide on desktop when collapsed */}
+        {user && (
+          <div
+            className={cn(
+              "mb-2 flex items-center gap-2 rounded-xl px-3 py-2",
+              sidebarCollapsed && "lg:hidden"
+            )}
+          >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 text-xs font-semibold text-white">
               {user.firstName.charAt(0)}
               {user.lastName.charAt(0)}
@@ -121,20 +155,23 @@ export default function Sidebar() {
             </div>
           </div>
         )}
+
         <button
           onClick={handleLogout}
           className={cn(
             "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors",
-            sidebarCollapsed && "justify-center"
+            sidebarCollapsed && "lg:justify-center"
           )}
           title={sidebarCollapsed ? "Đăng xuất" : undefined}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && <span>Đăng xuất</span>}
+          <span className={cn(sidebarCollapsed && "lg:hidden")}>Đăng xuất</span>
         </button>
+
+        {/* Desktop collapse toggle */}
         <button
           onClick={toggleSidebar}
-          className="mt-1 flex w-full items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          className="mt-1 hidden lg:flex w-full items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
           aria-label={sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
         >
           {sidebarCollapsed ? (

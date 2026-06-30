@@ -222,7 +222,7 @@ export default function Roles() {
 
       {/* Create/Edit Modal */}
       {(createOpen || editRole) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={
@@ -234,8 +234,8 @@ export default function Roles() {
                 : undefined
             }
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b px-6 py-4">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
               <h2 className="text-lg font-semibold">
                 {createOpen ? "Tạo vai trò" : "Sửa vai trò"}
               </h2>
@@ -245,7 +245,8 @@ export default function Roles() {
                   setEditRole(null);
                 }}
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
+                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                aria-label="Đóng"
               >
                 ✕
               </button>
@@ -272,27 +273,31 @@ export default function Roles() {
                   });
                 }
               }}
-              className="p-6 flex flex-col gap-4"
+              className="flex flex-col flex-1 overflow-hidden"
             >
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Tên vai trò</label>
-                <input
-                  required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="overflow-y-auto flex-1 p-6 flex flex-col gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Tên vai trò
+                  </label>
+                  <input
+                    required
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Mô tả</label>
+                  <textarea
+                    value={formDesc}
+                    onChange={(e) => setFormDesc(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Mô tả</label>
-                <textarea
-                  value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
-                  rows={3}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-3 border-t px-6 py-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -300,14 +305,14 @@ export default function Roles() {
                     setEditRole(null);
                   }}
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
                 >
                   Huỷ
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   Lưu
                 </button>
@@ -319,23 +324,24 @@ export default function Roles() {
 
       {/* Assign Permissions Modal */}
       {assignRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={!assignMutation.isPending ? () => setAssignRole(null) : undefined}
           />
-          <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b px-6 py-4">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
               <h2 className="text-lg font-semibold">Phân quyền — {assignRole.name}</h2>
               <button
                 onClick={() => setAssignRole(null)}
                 disabled={assignMutation.isPending}
-                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40"
+                className="rounded-lg p-1 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                aria-label="Đóng"
               >
                 ✕
               </button>
             </div>
-            <div className="overflow-y-auto max-h-[60vh] p-6 flex flex-col gap-4">
+            <div className="overflow-y-auto flex-1 p-6 flex flex-col gap-4">
               {Object.entries(groups).map(([mod, perms]) => {
                 const allSelected = perms.every((p) => selectedPerms.includes(p.id));
                 return (
@@ -373,7 +379,7 @@ export default function Roles() {
                 );
               })}
             </div>
-            <div className="flex justify-end gap-3 border-t px-6 py-4">
+            <div className="flex justify-end gap-3 border-t px-6 py-4 shrink-0">
               <button
                 onClick={() => setAssignRole(null)}
                 disabled={assignMutation.isPending}

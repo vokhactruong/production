@@ -80,7 +80,7 @@ export default function Dashboard() {
         <p className="mt-1 text-sm text-slate-500">Tổng quan hệ thống</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => <SkeletonStatCard key={i} />)
         ) : isError ? (
