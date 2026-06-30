@@ -283,16 +283,21 @@ Included:
 
 - Authentication
 - Dashboard
-- Students
-- Teachers
-- Classes
-- Courses
-- Scheduling
+- Student
+- Subject
+- Course
+- Employee
+- Classroom
+- Class
+- Enrollment
+- ClassSession
 - Attendance
-- Tuition
-- Notifications
-- Reports
+- Payment
+- Invoice
+- Guardian
+- Notification
 - CRM
+- AI
 
 Not Included:
 
@@ -332,3 +337,27 @@ Every feature should accomplish at least one of these goals:
 - Reduce operational costs.
 
 Avoid building features that do not deliver measurable business value.
+
+## Business Rules
+
+Course is only a template.
+
+Course must never contain:
+
+- Teacher
+- Classroom
+- Schedule
+- Start Date
+- End Date
+
+A Course can have many Classes.
+
+When creating a Class later:
+
+- packageLessons
+- lessonDuration
+- basePrice
+
+are copied from Course as snapshots.
+
+Future updates to Course must NOT affect existing Classes.

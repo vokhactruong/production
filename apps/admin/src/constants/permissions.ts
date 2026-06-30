@@ -30,4 +30,8 @@ export const PERMISSIONS = {
   SUBJECT_CREATE: "subject.create",
   SUBJECT_UPDATE: "subject.update",
   SUBJECT_DELETE: "subject.delete",
+  COURSE_READ: "course.read",
+  COURSE_CREATE: "course.create",
+  COURSE_UPDATE: "course.update",
+  COURSE_DELETE: "course.delete",
 } as const;

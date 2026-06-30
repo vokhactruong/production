@@ -182,6 +182,32 @@ export interface Subject {
   updatedAt: string;
 }
 
+// ─── Course ───────────────────────────────────────────────────────────────────
+
+export type CourseType = "NORMAL" | "TRIAL";
+export type CourseStatus = "ACTIVE" | "INACTIVE";
+
+export interface Course {
+  id: string;
+  subjectId: string;
+  code: string;
+  name: string;
+  description?: string;
+  courseType: CourseType;
+  packageLessons: number;
+  lessonDuration: number;
+  basePrice: string;
+  displayOrder: number;
+  status: CourseStatus;
+  createdAt: string;
+  updatedAt: string;
+  subject?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+}
+
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 export interface UserStats {

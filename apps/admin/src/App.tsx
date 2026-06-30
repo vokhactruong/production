@@ -26,6 +26,9 @@ import StudentForm from "./pages/students/StudentForm";
 import Subjects from "./pages/Subjects";
 import SubjectDetail from "./pages/subjects/SubjectDetail";
 import SubjectForm from "./pages/subjects/SubjectForm";
+import Courses from "./pages/Courses";
+import CourseDetail from "./pages/courses/CourseDetail";
+import CourseForm from "./pages/courses/CourseForm";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -227,6 +230,38 @@ export default function App() {
               element={
                 <PermissionRoute permission={PERMISSIONS.SUBJECT_UPDATE}>
                   <SubjectForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/courses"
+              element={
+                <PermissionRoute permission={PERMISSIONS.COURSE_READ}>
+                  <Courses />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/courses/new"
+              element={
+                <PermissionRoute permission={PERMISSIONS.COURSE_CREATE}>
+                  <CourseForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/courses/:id"
+              element={
+                <PermissionRoute permission={PERMISSIONS.COURSE_READ}>
+                  <CourseDetail />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/courses/:id/edit"
+              element={
+                <PermissionRoute permission={PERMISSIONS.COURSE_UPDATE}>
+                  <CourseForm />
                 </PermissionRoute>
               }
             />

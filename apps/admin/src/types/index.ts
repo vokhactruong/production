@@ -19,4 +19,7 @@ export type {
   Gender,
   Subject,
   SubjectStatus,
+  Course,
+  CourseType,
+  CourseStatus,
 } from "@school/types";

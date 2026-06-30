@@ -242,8 +242,43 @@ model Subject {
   deletedAt   DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  courses     Course[]
 
   @@index([status])
   @@index([deletedAt])
   @@map("subjects")
+}
+
+enum CourseType {
+  NORMAL
+  TRIAL
+}
+
+enum CourseStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Course {
+  id             String       @id @default(cuid())
+  subjectId      String
+  code           String       @unique
+  name           String
+  description    String?
+  courseType     CourseType   @default(NORMAL)
+  packageLessons Int
+  lessonDuration Int
+  basePrice      Decimal
+  displayOrder   Int          @default(0)
+  status         CourseStatus @default(ACTIVE)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+
+  @@index([subjectId])
+  @@index([deletedAt])
+  @@index([status])
+  @@index([displayOrder])
+  @@map("courses")
 }
