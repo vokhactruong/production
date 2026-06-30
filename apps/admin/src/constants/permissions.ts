@@ -26,4 +26,8 @@ export const PERMISSIONS = {
   STUDENT_CREATE: "student.create",
   STUDENT_UPDATE: "student.update",
   STUDENT_DELETE: "student.delete",
+  SUBJECT_READ: "subject.read",
+  SUBJECT_CREATE: "subject.create",
+  SUBJECT_UPDATE: "subject.update",
+  SUBJECT_DELETE: "subject.delete",
 } as const;

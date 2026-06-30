@@ -74,35 +74,11 @@ export class AuthController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: "Làm mới access token" })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    console.log("\n========== REFRESH ==========");
-    console.log("Time:", new Date().toISOString());
-    console.log("Origin:", req.headers.origin);
-    console.log("Host:", req.headers.host);
-    console.log("Cookie Header:", req.headers.cookie);
-    console.log("Parsed Cookies:", req.cookies);
-
     const token = req.cookies?.["refreshToken"] as string | undefined;
-
-    console.log("Refresh Token:", token ? `${token.substring(0, 20)}...` : "❌ NOT FOUND");
-
-    if (!token) {
-      console.log("❌ REFRESH FAILED: No refresh token");
-      throw new UnauthorizedException("Không có refresh token");
-    }
-
-    try {
-      const { refreshToken, ...response } = await this.authService.refresh(token);
-
-      console.log("✅ REFRESH SUCCESS");
-
-      res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
-
-      return response;
-    } catch (error) {
-      console.error("❌ REFRESH ERROR:", error);
-
-      throw error;
-    }
+    if (!token) throw new UnauthorizedException("Không có refresh token");
+    const { refreshToken, ...response } = await this.authService.refresh(token);
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    return response;
   }
 
   @Get("me")

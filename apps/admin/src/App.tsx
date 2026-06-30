@@ -23,6 +23,9 @@ import Settings from "./pages/Settings";
 import Students from "./pages/Students";
 import StudentDetail from "./pages/students/StudentDetail";
 import StudentForm from "./pages/students/StudentForm";
+import Subjects from "./pages/Subjects";
+import SubjectDetail from "./pages/subjects/SubjectDetail";
+import SubjectForm from "./pages/subjects/SubjectForm";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -192,6 +195,38 @@ export default function App() {
               element={
                 <PermissionRoute permission={PERMISSIONS.STUDENT_UPDATE}>
                   <StudentForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/subjects"
+              element={
+                <PermissionRoute permission={PERMISSIONS.SUBJECT_READ}>
+                  <Subjects />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/subjects/new"
+              element={
+                <PermissionRoute permission={PERMISSIONS.SUBJECT_CREATE}>
+                  <SubjectForm />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/subjects/:id"
+              element={
+                <PermissionRoute permission={PERMISSIONS.SUBJECT_READ}>
+                  <SubjectDetail />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/subjects/:id/edit"
+              element={
+                <PermissionRoute permission={PERMISSIONS.SUBJECT_UPDATE}>
+                  <SubjectForm />
                 </PermissionRoute>
               }
             />

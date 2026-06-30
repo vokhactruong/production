@@ -14,6 +14,7 @@ import { UploadModule } from "./upload/upload.module";
 import { AuditLogsModule } from "./audit-logs/audit-logs.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { StudentsModule } from "./students/students.module";
+import { SubjectsModule } from "./subjects/subjects.module";
 
 @Module({
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
@@ -32,6 +33,7 @@ import { StudentsModule } from "./students/students.module";
     AuditLogsModule,
     DashboardModule,
     StudentsModule,
+    SubjectsModule,
   ],
 })
 export class AppModule {}

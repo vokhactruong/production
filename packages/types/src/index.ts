@@ -166,6 +166,22 @@ export interface Student {
   updatedAt: string;
 }
 
+// ─── Subject ──────────────────────────────────────────────────────────────────
+
+export type SubjectStatus = "ACTIVE" | "INACTIVE";
+
+export interface Subject {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  status: SubjectStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 export interface UserStats {

@@ -31,6 +31,10 @@ const PERMISSIONS_SEED = [
   { name: "Create Student", code: "student.create", description: "Tạo học sinh" },
   { name: "Update Student", code: "student.update", description: "Sửa học sinh" },
   { name: "Delete Student", code: "student.delete", description: "Xóa học sinh" },
+  { name: "Read Subject", code: "subject.read", description: "Xem môn học" },
+  { name: "Create Subject", code: "subject.create", description: "Tạo môn học" },
+  { name: "Update Subject", code: "subject.update", description: "Sửa môn học" },
+  { name: "Delete Subject", code: "subject.delete", description: "Xóa môn học" },
 ];
 
 const ROLES_SEED = [
@@ -71,6 +75,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "student.create",
     "student.update",
     "student.delete",
+    "subject.read",
+    "subject.create",
+    "subject.update",
+    "subject.delete",
   ],
   Admin: [
     "dashboard.view",
@@ -100,6 +108,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "student.create",
     "student.update",
     "student.delete",
+    "subject.read",
+    "subject.create",
+    "subject.update",
+    "subject.delete",
   ],
   Editor: [
     "dashboard.view",
