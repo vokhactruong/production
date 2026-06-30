@@ -24,7 +24,7 @@ import { GoogleProfile } from "./strategies/google.strategy";
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "strict" as const,
+  sameSite: "none" as const,
   secure: process.env.NODE_ENV === "production",
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: "/",
