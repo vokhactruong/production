@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageIcon, X, AlertCircle } from "lucide-react";
-import { articlesApi } from "../../features/articles/api/articles.api";
 import { categoriesApi } from "../../features/categories/api/categories.api";
 import { articleKeys } from "../../features/articles/hooks/query-keys";
 import { categoryKeys } from "../../features/categories/hooks/query-keys";
+import { dashboardKeys } from "../../features/dashboard/hooks/query-keys";
+import { useArticle } from "../../features/articles/hooks/use-article";
 import { useCreateArticle } from "../../features/articles/hooks/use-create-article";
 import { useUpdateArticle } from "../../features/articles/hooks/use-update-article";
 import { uploadApi } from "../../features/upload/api/upload.api";
@@ -13,7 +14,7 @@ import { getData } from "../../lib/api-client";
 import { useToast } from "../../components/Toast";
 import RichEditor from "../../components/editor/RichEditor";
 import { cn } from "../../utils";
-import type { Article, ArticleStatus, Category } from "../../types";
+import type { ArticleStatus, Category } from "../../types";
 import slugify from "slugify";
 import axios from "axios";
 
@@ -47,11 +48,7 @@ export default function ArticleForm() {
     isLoading: isFetchingArticle,
     isError: isArticleError,
     refetch: refetchArticle,
-  } = useQuery({
-    queryKey: articleKeys.detail(id ?? ""),
-    queryFn: () => articlesApi.getAdminOne(id!),
-    enabled: isEdit,
-  });
+  } = useArticle(isEdit ? id : undefined);
 
   const { data: catsData } = useQuery({
     queryKey: categoryKeys.lists(),
@@ -61,15 +58,14 @@ export default function ArticleForm() {
 
   useEffect(() => {
     if (articleData) {
-      const article = getData<Article>(articleData);
-      setTitle(article.title);
-      setExcerpt(article.excerpt ?? "");
-      setContent(article.content);
-      setThumbnail(article.thumbnail ?? "");
-      setThumbnailPublicId(article.thumbnailPublicId ?? "");
-      setCategoryId(article.categoryId ?? "");
-      setTags(article.tags ?? []);
-      setStatus(article.status);
+      setTitle(articleData.title);
+      setExcerpt(articleData.excerpt ?? "");
+      setContent(articleData.content);
+      setThumbnail(articleData.thumbnail ?? "");
+      setThumbnailPublicId(articleData.thumbnailPublicId ?? "");
+      setCategoryId(articleData.categoryId ?? "");
+      setTags(articleData.tags ?? []);
+      setStatus(articleData.status);
     }
   }, [articleData]);
 
@@ -125,28 +121,15 @@ export default function ArticleForm() {
     setThumbnailPublicId("");
   };
 
+  const qc = useQueryClient();
   const createMutation = useCreateArticle();
   const updateMutation = useUpdateArticle(id ?? "");
   const isPending = isEdit ? updateMutation.isPending : createMutation.isPending;
 
-  const handleSave = (s: ArticleStatus) => {
-    const onSuccess = () => {
-      pendingPublicIdRef.current = null;
-      emitToast(isEdit ? "Đã cập nhật bài viết" : "Đã tạo bài viết", "success");
-      navigate("/articles");
-    };
-    const onError = (err: unknown) => {
-      emitToast(
-        axios.isAxiosError(err)
-          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
-          : "Có lỗi",
-        "error"
-      );
-    };
-
-    if (isEdit) {
-      updateMutation.mutate(
-        {
+  const handleSave = async (s: ArticleStatus) => {
+    try {
+      if (isEdit) {
+        await updateMutation.mutateAsync({
           title,
           excerpt: excerpt || undefined,
           content,
@@ -155,12 +138,9 @@ export default function ArticleForm() {
           categoryId: categoryId || undefined,
           tags,
           status: s,
-        },
-        { onSuccess, onError }
-      );
-    } else {
-      createMutation.mutate(
-        {
+        });
+      } else {
+        await createMutation.mutateAsync({
           title,
           excerpt: excerpt || undefined,
           content,
@@ -169,8 +149,19 @@ export default function ArticleForm() {
           categoryId: categoryId || undefined,
           tags,
           status: s,
-        },
-        { onSuccess, onError }
+        });
+      }
+      pendingPublicIdRef.current = null;
+      await qc.refetchQueries({ queryKey: articleKeys.lists(), type: "all" });
+      qc.invalidateQueries({ queryKey: dashboardKeys.stats() });
+      emitToast(isEdit ? "Đã cập nhật bài viết" : "Đã tạo bài viết", "success");
+      navigate("/articles");
+    } catch (err) {
+      emitToast(
+        axios.isAxiosError(err)
+          ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi")
+          : "Có lỗi",
+        "error"
       );
     }
   };

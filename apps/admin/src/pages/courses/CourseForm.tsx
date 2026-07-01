@@ -5,9 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCourse } from "../../features/courses/hooks/use-course";
 import { useCreateCourse } from "../../features/courses/hooks/use-create-course";
 import { useUpdateCourse } from "../../features/courses/hooks/use-update-course";
+import { courseKeys } from "../../features/courses/hooks/query-keys";
 import { useSubjects } from "../../features/subjects/hooks/use-subjects";
 import { useToast } from "../../components/Toast";
 import { cn } from "../../utils";
@@ -136,6 +138,7 @@ export default function CourseForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { emitToast } = useToast();
+  const qc = useQueryClient();
 
   const {
     register,
@@ -258,7 +261,7 @@ export default function CourseForm() {
       </div>
 
       <form
-        onSubmit={handleSubmit((data) => {
+        onSubmit={handleSubmit(async (data) => {
           const payload = {
             subjectId: data.subjectId,
             code: data.code,
@@ -271,24 +274,24 @@ export default function CourseForm() {
             displayOrder: data.displayOrder ?? 0,
             status: data.status,
           };
-          const onSuccess = () => {
+          try {
+            if (isEdit) {
+              const { subjectId: _s, code: _c, ...updatePayload } = payload;
+              await updateCourse.mutateAsync(updatePayload);
+            } else {
+              await createCourse.mutateAsync(payload);
+            }
+            await qc.refetchQueries({ queryKey: courseKeys.lists(), type: "all" });
             emitToast(
               isEdit ? "Cập nhật khóa học thành công" : "Tạo khóa học thành công",
               "success"
             );
             navigate("/courses");
-          };
-          const onError = (err: unknown) => {
+          } catch (err) {
             const msg = axios.isAxiosError(err)
               ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
               : "Có lỗi xảy ra";
             emitToast(msg, "error");
-          };
-          if (isEdit) {
-            const { subjectId: _s, code: _c, ...updatePayload } = payload;
-            updateCourse.mutate(updatePayload, { onSuccess, onError });
-          } else {
-            createCourse.mutate(payload, { onSuccess, onError });
           }
         })}
         noValidate

@@ -10,7 +10,6 @@ export function useUpdateStudent(id: string) {
     mutationFn: (data: unknown) => studentsApi.update(id, data),
     onSuccess: (response) => {
       qc.setQueryData<Student>(studentKeys.detail(id), getData(response));
-      qc.invalidateQueries({ queryKey: studentKeys.lists() });
     },
   });
 }

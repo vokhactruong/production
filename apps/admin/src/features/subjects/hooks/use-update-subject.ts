@@ -10,7 +10,6 @@ export function useUpdateSubject(id: string) {
     mutationFn: (data: unknown) => subjectsApi.update(id, data),
     onSuccess: (response) => {
       qc.setQueryData<Subject>(subjectKeys.detail(id), getData(response));
-      qc.invalidateQueries({ queryKey: subjectKeys.lists() });
     },
   });
 }

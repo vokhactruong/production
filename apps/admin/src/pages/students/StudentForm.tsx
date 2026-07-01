@@ -5,9 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { useStudent } from "../../features/students/hooks/use-student";
 import { useCreateStudent } from "../../features/students/hooks/use-create-student";
 import { useUpdateStudent } from "../../features/students/hooks/use-update-student";
+import { studentKeys } from "../../features/students/hooks/query-keys";
 import { useToast } from "../../components/Toast";
 import { cn } from "../../utils";
 
@@ -162,6 +164,7 @@ export default function StudentForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { emitToast } = useToast();
+  const qc = useQueryClient();
 
   const {
     register,
@@ -283,25 +286,25 @@ export default function StudentForm() {
       </div>
 
       <form
-        onSubmit={handleSubmit((data) => {
+        onSubmit={handleSubmit(async (data) => {
           const payload = buildPayload(data);
-          const onSuccess = () => {
+          try {
+            if (isEdit) {
+              await updateStudent.mutateAsync(payload);
+            } else {
+              await createStudent.mutateAsync(payload);
+            }
+            await qc.refetchQueries({ queryKey: studentKeys.lists(), type: "all" });
             emitToast(
               isEdit ? "Cập nhật học sinh thành công" : "Tạo học sinh thành công",
               "success"
             );
             navigate("/students");
-          };
-          const onError = (err: unknown) => {
+          } catch (err) {
             const msg = axios.isAxiosError(err)
               ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
               : "Có lỗi xảy ra";
             emitToast(msg, "error");
-          };
-          if (isEdit) {
-            updateStudent.mutate(payload, { onSuccess, onError });
-          } else {
-            createStudent.mutate(payload, { onSuccess, onError });
           }
         })}
         noValidate

@@ -2,130 +2,235 @@
 
 ## Purpose
 
-This document defines the caching strategy for the frontend.
+Caching strategy and mutation flow rules for the Admin Portal.
 
 All TanStack Query hooks must follow these rules.
 
 ---
 
-# Query Keys
+## Separation of Responsibilities
 
-Never hardcode query keys.
+### Mutation Hook — Responsible for
 
-Use centralized key factories.
+- API calls (`mutationFn`)
+- Immediate cache updates using the server response:
+  - `setQueryData(detail)` — update detail cache with returned resource
+  - `removeQueries(detail)` — clean up detail cache on delete
 
-Example
+### Mutation Hook — Never responsible for
 
-studentKeys.all
+- Toast notifications
+- Navigation (`navigate()`)
+- Dialog state (`setOpen(false)`)
+- Invalidating or refetching list queries (see Delete exception below)
+- Dashboard invalidation
 
-studentKeys.detail(id)
+### Page / Component — Responsible for
 
-studentKeys.list(filters)
-
----
-
-# Query Structure
-
-List
-
-["students", "list", filters]
-
-Detail
-
-["students", id]
-
-Activity
-
-["students", id, "activity"]
-
-Stats
-
-["students", "stats"]
+- User feedback (toast, loading indicators)
+- Navigation after mutation completes
+- Dialog open/close state
+- Refetch before navigation (Pattern B)
+- Dashboard invalidation (fire and forget, never awaited)
 
 ---
 
-# Create
+## Update Mutation Patterns
 
-If API returns the created resource:
+### Pattern A — Stay on current page
 
-- setQueryData(detail)
+Use when the UI does **not** navigate after the mutation (inline edit, dialog, toggle status).
 
-Always:
+```typescript
+// Mutation hook
+onSuccess(response) {
+  qc.setQueryData(xxxKeys.detail(id), getData(response));
+}
 
-- invalidate list
+// Component
+mutation.mutate(payload, {
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: xxxKeys.lists() });
+    emitToast("Cập nhật thành công", "success");
+    setOpen(false);
+  },
+  onError: (err) => emitToast(extractErrorMessage(err), "error"),
+});
+```
+
+**Applies to:** Toggle status, inline edit, quick-edit dialog
 
 ---
 
-# Update
+### Pattern B — Navigate back to list ⭐
 
-If API returns the updated resource:
+Use when the UI navigates to the list page after the mutation (Edit Form, Create Form).
 
-- setQueryData(detail)
+```typescript
+// Mutation hook — only manages cache
+onSuccess(response) {
+  qc.setQueryData(xxxKeys.detail(id), getData(response));
+}
 
-Always:
+// Component — manages full UX flow
+const qc = useQueryClient();
 
-- invalidate affected lists
+// Inside async submit handler:
+try {
+  await mutation.mutateAsync(payload);
+  await qc.refetchQueries({ queryKey: xxxKeys.lists(), type: "all" });
+  emitToast("Cập nhật thành công", "success");
+  navigate("/xxx");
+} catch (err) {
+  emitToast(extractErrorMessage(err), "error");
+}
+```
 
-Never use removeQueries after update.
+**Why `await refetchQueries` before `navigate`:**
+When the user is on an Edit Form, the list page is not mounted and has no active observers.
+`invalidateQueries` only marks queries stale and awaits active observers — since none exist,
+it resolves immediately and the list renders stale data after navigation.
+`refetchQueries({ type: "all" })` refetches even inactive cached queries, so the list is
+fresh before the component mounts.
 
-# Delete
+**Why not `setQueriesData`:**
+Manually patching list cache assumes the updated record still matches the current filter,
+sort, and page. This assumption breaks when status, price, or sort fields change. The server
+is the single source of truth for list state.
 
-Always
+**Applies to:** Edit Form, Create Form, Wizard, Multi-step Form
 
-- removeQueries(detail)
+---
 
-- invalidate list
+## Create Pattern
 
-# Optimistic Update
+```typescript
+// Mutation hook — cache the created resource if API returns it
+onSuccess(response) {
+  const created = getData(response);
+  qc.setQueryData(xxxKeys.detail(created.id), created);
+}
 
-Only use optimistic updates when rollback is implemented.
+// Component — always Pattern B (create then navigate to list)
+try {
+  await mutation.mutateAsync(payload);
+  await qc.refetchQueries({ queryKey: xxxKeys.lists(), type: "all" });
+  emitToast("Tạo thành công", "success");
+  navigate("/xxx");
+} catch (err) {
+  emitToast(extractErrorMessage(err), "error");
+}
+```
 
-Otherwise use standard mutation flow.
+If the API does not return the created resource, omit `onSuccess` from the hook entirely.
 
-# Query Keys
+---
 
-Each module must expose
+## Delete Pattern
 
-studentKeys
+```typescript
+// Mutation hook — cache cleanup (exception to separation rule)
+onSuccess(_, id) {
+  qc.removeQueries({ queryKey: xxxKeys.detail(id) });
+  qc.invalidateQueries({ queryKey: xxxKeys.lists() });
+}
 
-teacherKeys
+// Component — UX only
+mutation.mutate(id, {
+  onSuccess: () => {
+    emitToast("Đã xóa", "success");
+    setDeleteDialog(null);
+  },
+  onError: (err) => emitToast(extractErrorMessage(err), "error"),
+});
+```
 
-courseKeys
+**Exception:** Delete is always Pattern A — the user is already on the list page when
+triggering delete. The list query is always active, so `invalidateQueries` in the hook
+refetches immediately and produces correct results. Moving it to the component would
+add complexity with no benefit.
 
-classKeys
+---
 
-attendanceKeys
+## Dashboard
 
-...
+Dashboard stats are never awaited. Always fire and forget from the component.
 
-Never hardcode query keys inside components.
+```typescript
+// After mutation completes — no await
+qc.invalidateQueries({ queryKey: dashboardKeys.stats() });
+```
 
-## Mutation Rules
+Do not put dashboard invalidation inside mutation hooks.
 
-Create
-→ setQueryData(detail) if resource returned
-→ invalidate(list)
+---
 
-Update
-→ setQueryData(detail)
-→ invalidate(list)
+## Error Handling
 
-Delete
-→ removeQueries(detail)
-→ invalidate(list)
+### Mutation Hook
 
-Always remove detail cache before invalidating list caches.
+Hooks only propagate errors via `throw`. Never toast, log, or transform errors inside a hook.
 
-## Global Cache Rules
+```typescript
+// Default — useMutation re-throws automatically
+mutationFn: (data) => api.update(id, data),
+```
 
-Whenever a mutation changes data that affects dashboard metrics:
+### Component
 
-- invalidateQueries(dashboardKeys.stats())
+Components catch and display errors from `mutateAsync`.
 
-Examples:
+```typescript
+try {
+  await mutation.mutateAsync(payload);
+  // success path
+} catch (err) {
+  emitToast(extractErrorMessage(err), "error");
+}
+```
 
-- User CRUD
-- Student CRUD
-- Role CRUD
-- Category CRUD
-- Article CRUD
+---
+
+## Query Keys
+
+Never hardcode query keys. Always use the module's key factory.
+
+```typescript
+// ✅ Correct
+qc.refetchQueries({ queryKey: courseKeys.lists(), type: "all" });
+
+// ❌ Wrong
+qc.refetchQueries({ queryKey: ["courses", "list"], type: "all" });
+```
+
+Each module must export a key factory:
+
+```typescript
+export const xxxKeys = {
+  all: ["xxx"] as const,
+  lists: () => [...xxxKeys.all, "list"] as const,
+  list: (filters) => [...xxxKeys.lists(), filters] as const,
+  details: () => [...xxxKeys.all, "detail"] as const,
+  detail: (id: string) => [...xxxKeys.details(), id] as const,
+};
+```
+
+---
+
+## Query Structure
+
+```
+List      → ["module", "list", filters]
+Detail    → ["module", "detail", id]
+Activity  → ["module", "detail", id, "activity"]
+Stats     → ["module", "stats"]
+```
+
+---
+
+## Never Use setQueriesData for Paginated Lists
+
+Do not use `setQueriesData` to manually patch lists that have search, filter, sort, or pagination.
+
+**Only use `setQueriesData`** for simple flat lists with no filter/sort/pagination
+(e.g., a static dropdown of all active roles or countries).

@@ -11,7 +11,6 @@ export function useCreateCourse() {
     onSuccess: (response) => {
       const created = getData<Course>(response);
       qc.setQueryData<Course>(courseKeys.detail(created.id), created);
-      qc.invalidateQueries({ queryKey: courseKeys.lists() });
     },
   });
 }

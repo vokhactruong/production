@@ -10,7 +10,6 @@ export function useUpdateCourse(id: string) {
     mutationFn: (data: unknown) => coursesApi.update(id, data),
     onSuccess: (response) => {
       qc.setQueryData<Course>(courseKeys.detail(id), getData<Course>(response));
-      qc.invalidateQueries({ queryKey: courseKeys.lists() });
     },
   });
 }

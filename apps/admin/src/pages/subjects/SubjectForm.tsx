@@ -5,9 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSubject } from "../../features/subjects/hooks/use-subject";
 import { useCreateSubject } from "../../features/subjects/hooks/use-create-subject";
 import { useUpdateSubject } from "../../features/subjects/hooks/use-update-subject";
+import { subjectKeys } from "../../features/subjects/hooks/query-keys";
 import { useToast } from "../../components/Toast";
 import { cn } from "../../utils";
 
@@ -108,6 +110,7 @@ export default function SubjectForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { emitToast } = useToast();
+  const qc = useQueryClient();
 
   const {
     register,
@@ -223,7 +226,7 @@ export default function SubjectForm() {
       </div>
 
       <form
-        onSubmit={handleSubmit((data) => {
+        onSubmit={handleSubmit(async (data) => {
           const empty = (v?: string) => (!v || v.trim() === "" ? undefined : v);
           const payload = {
             code: data.code,
@@ -233,20 +236,21 @@ export default function SubjectForm() {
             icon: empty(data.icon),
             status: data.status,
           };
-          const onSuccess = () => {
+          try {
+            if (isEdit) {
+              const { code: _c, ...updatePayload } = payload;
+              await updateSubject.mutateAsync(updatePayload);
+            } else {
+              await createSubject.mutateAsync(payload);
+            }
+            await qc.refetchQueries({ queryKey: subjectKeys.lists(), type: "all" });
             emitToast(isEdit ? "Cập nhật môn học thành công" : "Tạo môn học thành công", "success");
             navigate("/subjects");
-          };
-          const onError = (err: unknown) => {
+          } catch (err) {
             const msg = axios.isAxiosError(err)
               ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
               : "Có lỗi xảy ra";
             emitToast(msg, "error");
-          };
-          if (isEdit) {
-            updateSubject.mutate(payload, { onSuccess, onError });
-          } else {
-            createSubject.mutate(payload, { onSuccess, onError });
           }
         })}
         noValidate
