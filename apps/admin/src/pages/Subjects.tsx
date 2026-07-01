@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
@@ -132,6 +132,105 @@ function Pagination({
   );
 }
 
+// ─── Subject Row ──────────────────────────────────────────────────────────────
+
+interface SubjectRowProps {
+  subject: Subject;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (s: Pick<Subject, "id" | "name" | "code">) => void;
+}
+
+const SubjectRow = memo(function SubjectRow({
+  subject: s,
+  onView,
+  onEdit,
+  onDelete,
+}: SubjectRowProps) {
+  const statusCfg = SUBJECT_STATUS_CONFIG[s.status];
+  return (
+    <tr className="group hover:bg-blue-50/40 transition-colors">
+      {/* Subject name + code */}
+      <td className="px-4 py-3.5">
+        <button onClick={() => onView(s.id)} className="flex items-center gap-3 text-left">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm"
+            style={{ backgroundColor: s.color ?? "#6366f1" }}
+          >
+            {s.icon ? (
+              <span className="text-base">{s.icon}</span>
+            ) : (
+              s.code.slice(0, 2).toUpperCase()
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+              {s.name}
+            </p>
+            <span className="font-mono text-xs text-slate-400">{s.code}</span>
+          </div>
+        </button>
+      </td>
+
+      {/* Description */}
+      <td className="hidden px-4 py-3.5 sm:table-cell">
+        <p className="max-w-xs truncate text-sm text-slate-500">
+          {s.description ?? <span className="text-slate-300">—</span>}
+        </p>
+      </td>
+
+      {/* Status */}
+      <td className="px-4 py-3.5">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
+            statusCfg.cls
+          )}
+        >
+          <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dot)} />
+          {statusCfg.label}
+        </span>
+      </td>
+
+      {/* Created At */}
+      <td className="hidden px-4 py-3.5 text-sm text-slate-500 md:table-cell">
+        {formatDate(s.createdAt)}
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-center justify-end gap-0.5">
+          <button
+            onClick={() => onView(s.id)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+            aria-label="Xem chi tiết"
+          >
+            <Eye className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <Can permission={PERMISSIONS.SUBJECT_UPDATE}>
+            <button
+              onClick={() => onEdit(s.id)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+              aria-label={`Chỉnh sửa ${s.name}`}
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Can>
+          <Can permission={PERMISSIONS.SUBJECT_DELETE}>
+            <button
+              onClick={() => onDelete({ id: s.id, name: s.name, code: s.code })}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+              aria-label={`Xoá ${s.name}`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Can>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Subjects() {
@@ -172,6 +271,13 @@ export default function Subjects() {
   const isFiltered = Boolean(search || status);
 
   const deleteMutation = useDeleteSubject();
+
+  const handleView = useCallback((id: string) => navigate(`/subjects/${id}`), [navigate]);
+  const handleEdit = useCallback((id: string) => navigate(`/subjects/${id}/edit`), [navigate]);
+  const handleDeleteClick = useCallback(
+    (s: Pick<Subject, "id" | "name" | "code">) => setDeleteSubject(s),
+    [setDeleteSubject]
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -325,95 +431,15 @@ export default function Subjects() {
                   </td>
                 </tr>
               ) : (
-                subjectsData?.items.map((s) => {
-                  const statusCfg = SUBJECT_STATUS_CONFIG[s.status];
-                  return (
-                    <tr key={s.id} className="group hover:bg-blue-50/40 transition-colors">
-                      {/* Subject name + code */}
-                      <td className="px-4 py-3.5">
-                        <button
-                          onClick={() => navigate(`/subjects/${s.id}`)}
-                          className="flex items-center gap-3 text-left"
-                        >
-                          <div
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm"
-                            style={{ backgroundColor: s.color ?? "#6366f1" }}
-                          >
-                            {s.icon ? (
-                              <span className="text-base">{s.icon}</span>
-                            ) : (
-                              s.code.slice(0, 2).toUpperCase()
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                              {s.name}
-                            </p>
-                            <span className="font-mono text-xs text-slate-400">{s.code}</span>
-                          </div>
-                        </button>
-                      </td>
-
-                      {/* Description */}
-                      <td className="hidden px-4 py-3.5 sm:table-cell">
-                        <p className="max-w-xs truncate text-sm text-slate-500">
-                          {s.description ?? <span className="text-slate-300">—</span>}
-                        </p>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
-                            statusCfg.cls
-                          )}
-                        >
-                          <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dot)} />
-                          {statusCfg.label}
-                        </span>
-                      </td>
-
-                      {/* Created At */}
-                      <td className="hidden px-4 py-3.5 text-sm text-slate-500 md:table-cell">
-                        {formatDate(s.createdAt)}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end gap-0.5">
-                          <button
-                            onClick={() => navigate(`/subjects/${s.id}`)}
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                            aria-label="Xem chi tiết"
-                          >
-                            <Eye className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                          <Can permission={PERMISSIONS.SUBJECT_UPDATE}>
-                            <button
-                              onClick={() => navigate(`/subjects/${s.id}/edit`)}
-                              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                              aria-label={`Chỉnh sửa ${s.name}`}
-                            >
-                              <Pencil className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                          </Can>
-                          <Can permission={PERMISSIONS.SUBJECT_DELETE}>
-                            <button
-                              onClick={() =>
-                                setDeleteSubject({ id: s.id, name: s.name, code: s.code })
-                              }
-                              className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                              aria-label={`Xoá ${s.name}`}
-                            >
-                              <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                          </Can>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                subjectsData?.items.map((s) => (
+                  <SubjectRow
+                    key={s.id}
+                    subject={s}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                  />
+                ))
               )}
             </tbody>
           </table>

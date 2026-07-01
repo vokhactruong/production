@@ -257,6 +257,35 @@ useCreateStudent()
 
 ---
 
+# Zustand
+
+Always subscribe using selectors, never subscribe to the entire store.
+
+Good
+
+```ts
+const user = useAuthStore((s) => s.user);
+const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+```
+
+Bad
+
+```ts
+const { user, isAuthenticated } = useAuthStore();
+```
+
+When selecting multiple values from the same store, use `useShallow` to avoid unnecessary re-renders.
+
+```ts
+const { user, isAuthenticated } = useAuthStore(
+  useShallow((s) => ({ user: s.user, isAuthenticated: s.isAuthenticated }))
+);
+```
+
+Never subscribe to the entire store unless absolutely necessary.
+
+---
+
 # TanStack Query
 
 Never hardcode query keys.

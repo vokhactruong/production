@@ -57,8 +57,12 @@ const MENU = [
 ];
 
 export default function Sidebar() {
-  const { hasPermission, user } = useAuthStore();
-  const { sidebarCollapsed, toggleSidebar, sidebarOpen, closeSidebar } = useUIStore();
+  const hasPermission = useAuthStore((s) => s.hasPermission);
+  const user = useAuthStore((s) => s.user);
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const closeSidebar = useUIStore((s) => s.closeSidebar);
   const handleLogout = () => authManager.logout();
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
@@ -139,6 +139,111 @@ function Pagination({
   );
 }
 
+// ─── Course Row ───────────────────────────────────────────────────────────────
+
+interface CourseRowProps {
+  course: Course;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (c: Pick<Course, "id" | "name" | "code">) => void;
+}
+
+const CourseRow = memo(function CourseRow({ course: c, onView, onEdit, onDelete }: CourseRowProps) {
+  const statusCfg = COURSE_STATUS_CONFIG[c.status];
+  const typeCfg = COURSE_TYPE_CONFIG[c.courseType];
+  return (
+    <tr className="group hover:bg-blue-50/40 transition-colors">
+      {/* Course name + code */}
+      <td className="px-4 py-3.5">
+        <button onClick={() => onView(c.id)} className="flex items-center gap-3 text-left">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+            <BookMarked className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+              {c.name}
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-slate-400">{c.code}</span>
+              <span className={cn("rounded px-1.5 py-0.5 text-xs font-medium", typeCfg.cls)}>
+                {typeCfg.label}
+              </span>
+            </div>
+          </div>
+        </button>
+      </td>
+
+      {/* Subject */}
+      <td className="hidden px-4 py-3.5 sm:table-cell">
+        <span className="text-sm text-slate-600">
+          {c.subject?.name ?? <span className="text-slate-300">—</span>}
+        </span>
+      </td>
+
+      {/* Package Lessons */}
+      <td className="hidden px-4 py-3.5 md:table-cell">
+        <span className="text-sm text-slate-700 font-medium">{c.packageLessons}</span>
+        <span className="ml-1 text-xs text-slate-400">buổi</span>
+      </td>
+
+      {/* Lesson Duration */}
+      <td className="hidden px-4 py-3.5 lg:table-cell">
+        <span className="text-sm text-slate-700 font-medium">{c.lessonDuration}</span>
+        <span className="ml-1 text-xs text-slate-400">phút</span>
+      </td>
+
+      {/* Base Price */}
+      <td className="hidden px-4 py-3.5 lg:table-cell">
+        <span className="text-sm font-semibold text-slate-900">{formatCurrency(c.basePrice)}</span>
+      </td>
+
+      {/* Status */}
+      <td className="px-4 py-3.5">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
+            statusCfg.cls
+          )}
+        >
+          <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dot)} />
+          {statusCfg.label}
+        </span>
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-center justify-end gap-0.5">
+          <button
+            onClick={() => onView(c.id)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+            aria-label="Xem chi tiết"
+          >
+            <Eye className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <Can permission={PERMISSIONS.COURSE_UPDATE}>
+            <button
+              onClick={() => onEdit(c.id)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+              aria-label={`Chỉnh sửa ${c.name}`}
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Can>
+          <Can permission={PERMISSIONS.COURSE_DELETE}>
+            <button
+              onClick={() => onDelete({ id: c.id, name: c.name, code: c.code })}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+              aria-label={`Xoá ${c.name}`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Can>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Courses() {
@@ -181,6 +286,13 @@ export default function Courses() {
   const isFiltered = Boolean(search || status || subjectId);
 
   const deleteMutation = useDeleteCourse();
+
+  const handleView = useCallback((id: string) => navigate(`/courses/${id}`), [navigate]);
+  const handleEdit = useCallback((id: string) => navigate(`/courses/${id}/edit`), [navigate]);
+  const handleDeleteClick = useCallback(
+    (c: Pick<Course, "id" | "name" | "code">) => setDeleteCourse(c),
+    [setDeleteCourse]
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -364,117 +476,15 @@ export default function Courses() {
                   </td>
                 </tr>
               ) : (
-                coursesData?.items.map((c) => {
-                  const statusCfg = COURSE_STATUS_CONFIG[c.status];
-                  const typeCfg = COURSE_TYPE_CONFIG[c.courseType];
-                  return (
-                    <tr key={c.id} className="group hover:bg-blue-50/40 transition-colors">
-                      {/* Course name + code */}
-                      <td className="px-4 py-3.5">
-                        <button
-                          onClick={() => navigate(`/courses/${c.id}`)}
-                          className="flex items-center gap-3 text-left"
-                        >
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
-                            <BookMarked className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                              {c.name}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs text-slate-400">{c.code}</span>
-                              <span
-                                className={cn(
-                                  "rounded px-1.5 py-0.5 text-xs font-medium",
-                                  typeCfg.cls
-                                )}
-                              >
-                                {typeCfg.label}
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      </td>
-
-                      {/* Subject */}
-                      <td className="hidden px-4 py-3.5 sm:table-cell">
-                        <span className="text-sm text-slate-600">
-                          {c.subject?.name ?? <span className="text-slate-300">—</span>}
-                        </span>
-                      </td>
-
-                      {/* Package Lessons */}
-                      <td className="hidden px-4 py-3.5 md:table-cell">
-                        <span className="text-sm text-slate-700 font-medium">
-                          {c.packageLessons}
-                        </span>
-                        <span className="ml-1 text-xs text-slate-400">buổi</span>
-                      </td>
-
-                      {/* Lesson Duration */}
-                      <td className="hidden px-4 py-3.5 lg:table-cell">
-                        <span className="text-sm text-slate-700 font-medium">
-                          {c.lessonDuration}
-                        </span>
-                        <span className="ml-1 text-xs text-slate-400">phút</span>
-                      </td>
-
-                      {/* Base Price */}
-                      <td className="hidden px-4 py-3.5 lg:table-cell">
-                        <span className="text-sm font-semibold text-slate-900">
-                          {formatCurrency(c.basePrice)}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
-                            statusCfg.cls
-                          )}
-                        >
-                          <span className={cn("h-1.5 w-1.5 rounded-full", statusCfg.dot)} />
-                          {statusCfg.label}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end gap-0.5">
-                          <button
-                            onClick={() => navigate(`/courses/${c.id}`)}
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                            aria-label="Xem chi tiết"
-                          >
-                            <Eye className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                          <Can permission={PERMISSIONS.COURSE_UPDATE}>
-                            <button
-                              onClick={() => navigate(`/courses/${c.id}/edit`)}
-                              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                              aria-label={`Chỉnh sửa ${c.name}`}
-                            >
-                              <Pencil className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                          </Can>
-                          <Can permission={PERMISSIONS.COURSE_DELETE}>
-                            <button
-                              onClick={() =>
-                                setDeleteCourse({ id: c.id, name: c.name, code: c.code })
-                              }
-                              className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                              aria-label={`Xoá ${c.name}`}
-                            >
-                              <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                          </Can>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                coursesData?.items.map((c) => (
+                  <CourseRow
+                    key={c.id}
+                    course={c}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                  />
+                ))
               )}
             </tbody>
           </table>

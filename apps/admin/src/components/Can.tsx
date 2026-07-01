@@ -8,6 +8,6 @@ interface CanProps {
 }
 
 export default function Can({ permission, children, fallback = null }: CanProps) {
-  const { hasPermission } = useAuthStore();
+  const hasPermission = useAuthStore((s) => s.hasPermission);
   return hasPermission(permission) ? <>{children}</> : <>{fallback}</>;
 }

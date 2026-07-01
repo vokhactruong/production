@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
@@ -270,6 +270,134 @@ function DeleteDialog({
   );
 }
 
+// ─── Student Row ──────────────────────────────────────────────────────────────
+
+interface StudentRowProps {
+  student: Student;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (s: Pick<Student, "id" | "firstName" | "lastName" | "code">) => void;
+}
+
+const StudentRow = memo(function StudentRow({
+  student: s,
+  onView,
+  onEdit,
+  onDelete,
+}: StudentRowProps) {
+  return (
+    <tr className="group hover:bg-blue-50/40 transition-colors">
+      {/* Student */}
+      <td className="px-4 py-3.5">
+        <button onClick={() => onView(s.id)} className="flex items-center gap-3 text-left">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-xs font-semibold text-white shadow-sm">
+            {s.avatar ? (
+              <img
+                src={s.avatar}
+                alt={`${s.firstName} ${s.lastName}`}
+                className="h-9 w-9 rounded-full object-cover"
+              />
+            ) : (
+              getInitials(s.firstName, s.lastName)
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+              {s.firstName} {s.lastName}
+            </p>
+            <div className="flex items-center gap-1.5">
+              {s.code && <span className="font-mono text-xs text-slate-400">{s.code}</span>}
+              {s.dateOfBirth && (
+                <span className="text-xs text-slate-400">
+                  {s.code ? "· " : ""}
+                  {s.gender ? GENDER_LABEL[s.gender] + ", " : ""}
+                  {formatDate(s.dateOfBirth)}
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+      </td>
+
+      {/* Contact */}
+      <td className="hidden px-4 py-3.5 sm:table-cell">
+        <div className="flex flex-col gap-0.5">
+          {s.phone ? <span className="text-slate-700">{s.phone}</span> : null}
+          {s.email ? <span className="text-xs text-slate-500">{s.email}</span> : null}
+          {!s.phone && !s.email && <span className="text-slate-300">—</span>}
+        </div>
+      </td>
+
+      {/* Guardian */}
+      <td className="hidden px-4 py-3.5 lg:table-cell">
+        <div className="flex flex-col gap-0.5">
+          {s.guardianName ? <span className="text-slate-700">{s.guardianName}</span> : null}
+          {s.guardianPhone ? (
+            <span className="text-xs text-slate-500">{s.guardianPhone}</span>
+          ) : null}
+          {!s.guardianName && !s.guardianPhone && <span className="text-slate-300">—</span>}
+        </div>
+      </td>
+
+      {/* Status */}
+      <td className="px-4 py-3.5">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
+            STATUS_CONFIG[s.status].cls
+          )}
+        >
+          <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_CONFIG[s.status].dot)} />
+          {STATUS_CONFIG[s.status].label}
+        </span>
+      </td>
+
+      {/* Created At */}
+      <td className="hidden px-4 py-3.5 text-sm text-slate-500 md:table-cell">
+        {formatDate(s.createdAt)}
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-center justify-end gap-0.5">
+          <button
+            onClick={() => onView(s.id)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+            aria-label="Xem hồ sơ"
+          >
+            <Eye className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <Can permission={PERMISSIONS.STUDENT_UPDATE}>
+            <button
+              onClick={() => onEdit(s.id)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+              aria-label={`Chỉnh sửa ${s.firstName} ${s.lastName}`}
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Can>
+          <Can permission={PERMISSIONS.STUDENT_DELETE}>
+            <button
+              onClick={() =>
+                onDelete({
+                  id: s.id,
+                  firstName: s.firstName,
+                  lastName: s.lastName,
+                  code: s.code,
+                })
+              }
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+              aria-label={`Xoá ${s.firstName} ${s.lastName}`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Can>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Students() {
@@ -315,6 +443,13 @@ export default function Students() {
   const isFiltered = Boolean(search || status);
 
   const deleteMutation = useDeleteStudent();
+
+  const handleView = useCallback((id: string) => navigate(`/students/${id}`), [navigate]);
+  const handleEdit = useCallback((id: string) => navigate(`/students/${id}/edit`), [navigate]);
+  const handleDeleteClick = useCallback(
+    (s: Pick<Student, "id" | "firstName" | "lastName" | "code">) => setDeleteStudent(s),
+    [setDeleteStudent]
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -473,126 +608,13 @@ export default function Students() {
                 </tr>
               ) : (
                 studentsData?.items.map((s) => (
-                  <tr key={s.id} className="group hover:bg-blue-50/40 transition-colors">
-                    {/* Student */}
-                    <td className="px-4 py-3.5">
-                      <button
-                        onClick={() => navigate(`/students/${s.id}`)}
-                        className="flex items-center gap-3 text-left"
-                      >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-xs font-semibold text-white shadow-sm">
-                          {s.avatar ? (
-                            <img
-                              src={s.avatar}
-                              alt={`${s.firstName} ${s.lastName}`}
-                              className="h-9 w-9 rounded-full object-cover"
-                            />
-                          ) : (
-                            getInitials(s.firstName, s.lastName)
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                            {s.firstName} {s.lastName}
-                          </p>
-                          <div className="flex items-center gap-1.5">
-                            {s.code && (
-                              <span className="font-mono text-xs text-slate-400">{s.code}</span>
-                            )}
-                            {s.dateOfBirth && (
-                              <span className="text-xs text-slate-400">
-                                {s.code ? "· " : ""}
-                                {s.gender ? GENDER_LABEL[s.gender] + ", " : ""}
-                                {formatDate(s.dateOfBirth)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    </td>
-
-                    {/* Contact */}
-                    <td className="hidden px-4 py-3.5 sm:table-cell">
-                      <div className="flex flex-col gap-0.5">
-                        {s.phone ? <span className="text-slate-700">{s.phone}</span> : null}
-                        {s.email ? <span className="text-xs text-slate-500">{s.email}</span> : null}
-                        {!s.phone && !s.email && <span className="text-slate-300">—</span>}
-                      </div>
-                    </td>
-
-                    {/* Guardian */}
-                    <td className="hidden px-4 py-3.5 lg:table-cell">
-                      <div className="flex flex-col gap-0.5">
-                        {s.guardianName ? (
-                          <span className="text-slate-700">{s.guardianName}</span>
-                        ) : null}
-                        {s.guardianPhone ? (
-                          <span className="text-xs text-slate-500">{s.guardianPhone}</span>
-                        ) : null}
-                        {!s.guardianName && !s.guardianPhone && (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-3.5">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
-                          STATUS_CONFIG[s.status].cls
-                        )}
-                      >
-                        <span
-                          className={cn("h-1.5 w-1.5 rounded-full", STATUS_CONFIG[s.status].dot)}
-                        />
-                        {STATUS_CONFIG[s.status].label}
-                      </span>
-                    </td>
-
-                    {/* Created At */}
-                    <td className="hidden px-4 py-3.5 text-sm text-slate-500 md:table-cell">
-                      {formatDate(s.createdAt)}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <button
-                          onClick={() => navigate(`/students/${s.id}`)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                          aria-label="Xem hồ sơ"
-                        >
-                          <Eye className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        <Can permission={PERMISSIONS.STUDENT_UPDATE}>
-                          <button
-                            onClick={() => navigate(`/students/${s.id}/edit`)}
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                            aria-label={`Chỉnh sửa ${s.firstName} ${s.lastName}`}
-                          >
-                            <Pencil className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        </Can>
-                        <Can permission={PERMISSIONS.STUDENT_DELETE}>
-                          <button
-                            onClick={() =>
-                              setDeleteStudent({
-                                id: s.id,
-                                firstName: s.firstName,
-                                lastName: s.lastName,
-                                code: s.code,
-                              })
-                            }
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                            aria-label={`Xoá ${s.firstName} ${s.lastName}`}
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        </Can>
-                      </div>
-                    </td>
-                  </tr>
+                  <StudentRow
+                    key={s.id}
+                    student={s}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                  />
                 ))
               )}
             </tbody>

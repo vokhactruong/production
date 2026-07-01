@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import PageLoader from "../components/PageLoader";
 import { useUIStore } from "../store/auth.store";
 
 export default function AdminLayout() {
-  const { sidebarOpen, closeSidebar } = useUIStore();
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const closeSidebar = useUIStore((s) => s.closeSidebar);
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -31,7 +33,9 @@ export default function AdminLayout() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

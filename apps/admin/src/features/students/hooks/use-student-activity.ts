@@ -4,7 +4,11 @@ import { getList } from "../../../lib/api-client";
 import { auditLogKeys } from "./query-keys";
 import type { AuditLog } from "../../../types";
 
-export function useStudentActivity(studentId: string, limit: number) {
+type Options = {
+  enabled?: boolean;
+};
+
+export function useStudentActivity(studentId: string, limit: number, options?: Options) {
   return useQuery({
     queryKey: auditLogKeys.forEntity("Student", studentId, limit),
     queryFn: () =>
@@ -12,5 +16,6 @@ export function useStudentActivity(studentId: string, limit: number) {
         .getForEntity("Student", studentId, { limit })
         .then((res) => getList<AuditLog>(res)),
     placeholderData: keepPreviousData,
+    enabled: Boolean(studentId) && (options?.enabled ?? true),
   });
 }

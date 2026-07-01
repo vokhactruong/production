@@ -28,8 +28,8 @@ function resolveTitle(pathname: string): string {
 
 export default function Header() {
   const { pathname } = useLocation();
-  const { user } = useAuthStore();
-  const { openSidebar } = useUIStore();
+  const user = useAuthStore((s) => s.user);
+  const openSidebar = useUIStore((s) => s.openSidebar);
 
   const title = resolveTitle(pathname);
 

@@ -258,10 +258,14 @@ function GuardianTab({ student }: { student: Student }) {
 
 const PAGE_SIZE = 10;
 
-function ActivityTab({ studentId }: { studentId: string }) {
+function ActivityTab({ studentId, active }: { studentId: string; active: boolean }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
 
-  const { data: logs, isLoading, isFetching } = useStudentActivity(studentId, limit);
+  const {
+    data: logs,
+    isLoading,
+    isFetching,
+  } = useStudentActivity(studentId, limit, { enabled: active });
   const hasMore = logs ? logs.meta.total > limit : false;
 
   if (isLoading) {
@@ -520,10 +524,24 @@ export default function StudentDetail() {
       </div>
 
       {/* ── Tab content ───────────────────────────────────────────────────────── */}
-      <div role="tabpanel" id={`tabpanel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === "overview" && <OverviewTab student={student} />}
-        {tab === "guardian" && <GuardianTab student={student} />}
-        {tab === "activity" && <ActivityTab studentId={student.id} />}
+      {tab === "overview" && (
+        <div role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview">
+          <OverviewTab student={student} />
+        </div>
+      )}
+      {tab === "guardian" && (
+        <div role="tabpanel" id="tabpanel-guardian" aria-labelledby="tab-guardian">
+          <GuardianTab student={student} />
+        </div>
+      )}
+      {/* ActivityTab stays mounted once visited to avoid refetch on tab switch */}
+      <div
+        role="tabpanel"
+        id="tabpanel-activity"
+        aria-labelledby="tab-activity"
+        hidden={tab !== "activity"}
+      >
+        <ActivityTab studentId={student.id} active={tab === "activity"} />
       </div>
     </div>
   );
