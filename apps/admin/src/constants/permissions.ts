@@ -34,4 +34,8 @@ export const PERMISSIONS = {
   COURSE_CREATE: "course.create",
   COURSE_UPDATE: "course.update",
   COURSE_DELETE: "course.delete",
+  EMPLOYEE_READ: "employee.read",
+  EMPLOYEE_CREATE: "employee.create",
+  EMPLOYEE_UPDATE: "employee.update",
+  EMPLOYEE_DELETE: "employee.delete",
 } as const;

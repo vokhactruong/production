@@ -31,6 +31,9 @@ const SubjectForm = lazy(() => import("./pages/subjects/SubjectForm"));
 const Courses = lazy(() => import("./pages/Courses"));
 const CourseDetail = lazy(() => import("./pages/courses/CourseDetail"));
 const CourseForm = lazy(() => import("./pages/courses/CourseForm"));
+const Employees = lazy(() => import("./pages/Employees"));
+const EmployeeDetail = lazy(() => import("./pages/employees/EmployeeDetail"));
+const EmployeeForm = lazy(() => import("./pages/employees/EmployeeForm"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -266,6 +269,38 @@ export default function App() {
                 element={
                   <PermissionRoute permission={PERMISSIONS.COURSE_UPDATE}>
                     <CourseForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/employees"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.EMPLOYEE_READ}>
+                    <Employees />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/employees/new"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.EMPLOYEE_CREATE}>
+                    <EmployeeForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/employees/:id"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.EMPLOYEE_READ}>
+                    <EmployeeDetail />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/employees/:id/edit"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.EMPLOYEE_UPDATE}>
+                    <EmployeeForm />
                   </PermissionRoute>
                 }
               />

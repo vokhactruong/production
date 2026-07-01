@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LogOut,
   X,
+  Briefcase,
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
@@ -47,6 +48,12 @@ const MENU = [
     icon: BookMarked,
     label: "Khóa học",
     permission: PERMISSIONS.COURSE_READ,
+  },
+  {
+    href: "/employees",
+    icon: Briefcase,
+    label: "Nhân viên",
+    permission: PERMISSIONS.EMPLOYEE_READ,
   },
   { href: "/roles", icon: Shield, label: "Vai trò", permission: PERMISSIONS.ROLE_READ },
   { href: "/permissions", icon: Key, label: "Quyền hạn", permission: PERMISSIONS.PERMISSION_READ },

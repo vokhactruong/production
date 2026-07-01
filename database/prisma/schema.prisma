@@ -259,6 +259,48 @@ enum CourseStatus {
   INACTIVE
 }
 
+enum EmployeeType {
+  TEACHER
+  RECEPTIONIST
+  ACCOUNTANT
+  ACADEMIC
+  MANAGER
+  DIRECTOR
+  OTHER
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  RESIGNED
+}
+
+model Employee {
+  id           String         @id @default(cuid())
+  code         String         @unique
+  firstName    String
+  lastName     String
+  email        String?
+  phone        String?
+  gender       Gender?
+  dateOfBirth  DateTime?
+  address      String?
+  avatar       String?
+  employeeType EmployeeType
+  hireDate     DateTime?
+  status       EmployeeStatus @default(ACTIVE)
+  notes        String?
+  deletedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([status])
+  @@index([employeeType])
+  @@index([deletedAt])
+  @@map("employees")
+}
+
 model Course {
   id             String       @id @default(cuid())
   subjectId      String

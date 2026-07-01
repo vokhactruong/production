@@ -22,4 +22,7 @@ export type {
   Course,
   CourseType,
   CourseStatus,
+  Employee,
+  EmployeeType,
+  EmployeeStatus,
 } from "@school/types";

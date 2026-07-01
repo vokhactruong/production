@@ -208,6 +208,38 @@ export interface Course {
   };
 }
 
+// ─── Employee ─────────────────────────────────────────────────────────────────
+
+export type EmployeeType =
+  | "TEACHER"
+  | "RECEPTIONIST"
+  | "ACCOUNTANT"
+  | "ACADEMIC"
+  | "MANAGER"
+  | "DIRECTOR"
+  | "OTHER";
+
+export type EmployeeStatus = "ACTIVE" | "INACTIVE" | "ON_LEAVE" | "RESIGNED";
+
+export interface Employee {
+  id: string;
+  code: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  gender?: Gender;
+  dateOfBirth?: string;
+  address?: string;
+  avatar?: string;
+  employeeType: EmployeeType;
+  hireDate?: string;
+  status: EmployeeStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 export interface UserStats {
