@@ -42,6 +42,28 @@ The platform should help owners manage students, teachers, classes, tuition, att
 
 ---
 
+## Employee
+
+- Employee Profile (name, contact, gender, date of birth, address, avatar)
+- Employee Type (Teacher, Receptionist, Accountant, Academic, Manager, Director, Other)
+- Employment Information (hire date, status, notes)
+- Auto-generated employee code (NV-001, NV-002, ...)
+- Search, filter by type and status, pagination
+- Soft delete with audit log
+- Optional linked User account for system login
+
+### Optional Login Account
+
+An employee exists as a business profile independent of any system account.
+
+When an employee needs to log in to the system, a User account can be linked to their Employee profile.
+
+This link is optional and managed separately from the Employee CRUD.
+
+Employee personal data (name, phone, email) always lives in the Employee record, never duplicated in User.
+
+---
+
 ## Student
 
 - Student Profile
@@ -93,6 +115,28 @@ The platform should help owners manage students, teachers, classes, tuition, att
 - Outstanding Balance
 - Remaining Lessons
 - Invoices
+
+---
+
+## Parent Portal (Future)
+
+Parents will have a User account linked to a Guardian profile.
+
+The Guardian profile holds business data (name, relationship, contact).
+
+The User account provides login and permission to view their child's attendance, tuition, and progress.
+
+This follows the same pattern as Employee ↔ User.
+
+---
+
+## Student Portal (Future)
+
+Adult students may have a User account linked to their Student profile.
+
+The Student profile holds enrollment and academic data.
+
+The User account provides login and permission to view their own schedule and progress.
 
 ---
 

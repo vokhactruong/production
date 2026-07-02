@@ -32,6 +32,61 @@ Never write raw SQL unless absolutely necessary.
 
 ---
 
+# Entity Relationship: User ↔ Employee
+
+```
+User (Authentication)
+  id
+  email
+  password
+  status
+  roles
+        |
+        | 0..1  (optional)
+        |
+Employee (Business Profile)
+  id
+  userId?  ──── FK → users.id (nullable, unique)
+  code
+  firstName
+  lastName
+  employeeType
+  status
+```
+
+Relationship: One-to-One, optional on both sides.
+
+- A User may exist without an Employee (e.g., a system-only admin account).
+- An Employee may exist without a User (e.g., staff not yet given system access).
+- When linked, one User maps to exactly one Employee and vice versa.
+
+Why the FK lives on Employee
+
+The Employee table owns the relationship because the link is optional business configuration, not a core authentication requirement. Adding `userId` to Employee keeps the User table clean and focused on authentication only.
+
+Why fields are never duplicated
+
+Employee stores: firstName, lastName, email, phone, avatar, address, gender, dateOfBirth.
+
+User stores: email (login identity), firstName, lastName (display name), avatar (profile photo).
+
+Note: User.email is the login credential and may differ from Employee.email (work contact). They are separate fields for separate purposes and are never synchronized automatically.
+
+Normalization
+
+This design is in Third Normal Form (3NF). Each table has a single responsibility. No business data lives in User. No authentication data lives in Employee.
+
+Future expansion
+
+When Guardian and Student portals are implemented, the same pattern applies:
+
+- Guardian profile ↔ User account (optional)
+- Student profile ↔ User account (optional, for adult students)
+
+---
+
+---
+
 # Naming
 
 ## Models

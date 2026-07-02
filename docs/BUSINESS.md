@@ -10,6 +10,52 @@ Every feature must solve a real business problem and save time, reduce mistakes,
 
 ---
 
+# Architecture: Authentication vs Business Profile
+
+The system separates two distinct concerns:
+
+Authentication
+
+↓
+
+User
+
+- Login credentials
+- Password
+- Session tokens
+- RBAC roles and permissions
+- Account status
+
+Business Profile
+
+↓
+
+Employee
+
+- Personal information
+- Job type and hire date
+- Contact details
+- Employment status
+- Business codes
+
+An Employee is not an authentication account.
+
+An Employee may optionally be linked to a User when that person needs to log in to the system.
+
+Example
+
+A receptionist is created as an Employee on day one.
+
+When they need system access, a User account is created and linked to their Employee profile.
+
+Their personal information (name, phone, email) lives in Employee.
+
+Their login credentials and permissions live in User.
+
+This design prevents data duplication and allows business profiles to exist independently of login accounts.
+
+---
+
 # Product Principles
 
 Before implementing any feature, ask:

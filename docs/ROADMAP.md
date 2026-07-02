@@ -42,19 +42,47 @@ Replace Excel.
 
 Features
 
-- Student Management
-- Teacher Management
-- Courses
-- Classes
-- Classrooms
-- Scheduling
+- Student Management ✅
+- Employee Management ✅
+- Courses ✅
+- Classroom
+- Class
+- Enrollment
 - Attendance
 - Tuition
+- Scheduling
 - Notifications
+
+Next
+
+Classroom → Class → Enrollment → Attendance → Payment
 
 Success
 
 A center should be able to operate daily without spreadsheets.
+
+---
+
+# Phase 2.5 - Employee ↔ User Linking (Future Milestone)
+
+Goal:
+
+Allow employees to log in to the system using a linked User account.
+
+Features
+
+- Link an existing Employee to an existing User
+- Create a new User account directly from the Employee detail page
+- Unlink a User from an Employee
+- Display linked account status on Employee profile
+
+Rules
+
+- Linking is optional. Employees continue to function without a User account.
+- Employee business data is never duplicated into User.
+- Login credentials and roles belong only to User.
+
+Status: Planned
 
 ---
 

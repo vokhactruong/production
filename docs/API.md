@@ -8,6 +8,39 @@ Every endpoint must follow these standards to ensure consistency, maintainabilit
 
 ---
 
+# API Responsibilities
+
+## User API → Authentication & Account Management
+
+Endpoints: `/users`, `/auth`
+
+Responsibilities:
+
+- Login, logout, token refresh
+- User CRUD (create accounts, assign roles)
+- Password management
+- Profile update (User-level display name, avatar)
+- RBAC: role and permission assignment
+
+User API must never expose or modify business profile data (Employee, Student, Guardian).
+
+## Employee API → Business Profile CRUD
+
+Endpoints: `/employees`
+
+Responsibilities:
+
+- Employee profile CRUD (personal info, job type, status)
+- Auto-generated employee codes
+- Search, filter, pagination
+- Soft delete with audit log
+
+Employee API must never handle authentication, passwords, tokens, or roles.
+
+Linking an Employee to a User account is a separate future operation and must not be part of standard Employee CRUD.
+
+---
+
 # API Style
 
 Use RESTful APIs.
