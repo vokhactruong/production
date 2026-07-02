@@ -113,7 +113,9 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findFirst({
+      where: { email: dto.email, deletedAt: null },
+    });
     if (existing) throw new ConflictException("Email đã được sử dụng");
 
     const hash = await bcrypt.hash(dto.password, 12);
@@ -249,7 +251,7 @@ export class AuthService {
     if (!profile.email) throw new BadRequestException("Không lấy được email từ Google");
 
     let user = await this.prisma.user.findFirst({
-      where: { email: profile.email, deletedAt: null },
+      where: { email: profile.email, deletedAt: null, status: "ACTIVE" },
     });
 
     const studentRole = await this.prisma.role.findUnique({ where: { name: "Student" } });

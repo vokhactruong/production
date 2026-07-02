@@ -2,13 +2,32 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   InternalServerErrorException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import * as bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
-import { CreateEmployeeDto, EmployeeQueryDto, UpdateEmployeeDto } from "./dto/employee.dto";
-import { EmployeesRepository } from "./employees.repository";
+import {
+  CreateEmployeeDto,
+  EmployeeQueryDto,
+  UpdateEmployeeDto,
+  LinkUserDto,
+  CreateUserAccountDto,
+} from "./dto/employee.dto";
+import { EmployeesRepository, EmployeeRecord } from "./employees.repository";
+
+type EmployeeUser = {
+  id: string;
+  email: string;
+  status: string;
+  roles: Array<{ id: string; name: string }>;
+};
+
+type FormattedEmployee = Omit<EmployeeRecord, "user"> & {
+  user: EmployeeUser | null;
+};
 
 @Injectable()
 export class EmployeesService {
@@ -17,6 +36,21 @@ export class EmployeesService {
     private readonly employeesRepository: EmployeesRepository,
     private readonly auditLogs: AuditLogsService
   ) {}
+
+  private formatEmployee(record: EmployeeRecord): FormattedEmployee {
+    const { user, ...rest } = record;
+    return {
+      ...rest,
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            status: user.status,
+            roles: user.userRoles.map((ur) => ur.role),
+          }
+        : null,
+    };
+  }
 
   private buildSearchConditions(search: string): Prisma.EmployeeWhereInput[] {
     const mode = "insensitive" as const;
@@ -71,7 +105,7 @@ export class EmployeesService {
     ]);
 
     return {
-      items,
+      items: items.map((e) => this.formatEmployee(e)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -79,7 +113,25 @@ export class EmployeesService {
   async findOne(id: string) {
     const employee = await this.employeesRepository.findById(id);
     if (!employee) throw new NotFoundException("Nhân viên không tồn tại");
-    return employee;
+    return this.formatEmployee(employee);
+  }
+
+  async findAvailableUsers() {
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        status: "ACTIVE",
+        employee: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+      orderBy: { lastName: "asc" },
+    });
+    return users;
   }
 
   private async generateCode(): Promise<string> {
@@ -131,7 +183,7 @@ export class EmployeesService {
           return created;
         });
 
-        return employee;
+        return this.formatEmployee(employee);
       } catch (err) {
         const isCodeConflict =
           err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -195,13 +247,19 @@ export class EmployeesService {
       return updated;
     });
 
-    return employee;
+    return this.formatEmployee(employee);
   }
 
   async remove(id: string, actorId?: string) {
     await this.prisma.$transaction(async (tx) => {
       const existing = await this.employeesRepository.findById(id, tx);
       if (!existing) throw new NotFoundException("Nhân viên không tồn tại");
+
+      if (existing.userId) {
+        throw new BadRequestException(
+          "Không thể xóa nhân viên đang có tài khoản đăng nhập. Vui lòng hủy liên kết tài khoản trước."
+        );
+      }
 
       await this.employeesRepository.softDelete(id, tx);
       await this.auditLogs.log(
@@ -211,5 +269,145 @@ export class EmployeesService {
     });
 
     return { message: "Xóa nhân viên thành công" };
+  }
+
+  async linkUser(employeeId: string, dto: LinkUserDto, actorId?: string) {
+    const employee = await this.prisma.$transaction(async (tx) => {
+      const existing = await this.employeesRepository.findById(employeeId, tx);
+      if (!existing) throw new NotFoundException("Nhân viên không tồn tại");
+
+      if (existing.userId) {
+        throw new ConflictException(
+          "Nhân viên này đã có tài khoản đăng nhập. Vui lòng hủy liên kết trước."
+        );
+      }
+
+      const user = await tx.user.findFirst({
+        where: { id: dto.userId, deletedAt: null, status: "ACTIVE" },
+      });
+      if (!user) throw new NotFoundException("Tài khoản không tồn tại hoặc không hoạt động");
+
+      const alreadyLinked = await this.employeesRepository.findByUserId(dto.userId);
+      if (alreadyLinked && alreadyLinked.id !== employeeId) {
+        throw new ConflictException("Tài khoản này đã được liên kết với nhân viên khác");
+      }
+
+      const updated = await this.employeesRepository.update(
+        employeeId,
+        { user: { connect: { id: dto.userId } } },
+        tx
+      );
+
+      await this.auditLogs.log(
+        {
+          userId: actorId,
+          action: "UPDATE",
+          entity: "Employee",
+          entityId: employeeId,
+          metadata: { action: "LINK_USER", linkedUserId: dto.userId },
+        },
+        tx
+      );
+
+      return updated;
+    });
+
+    return this.formatEmployee(employee);
+  }
+
+  async unlinkUser(employeeId: string, actorId?: string) {
+    const employee = await this.prisma.$transaction(async (tx) => {
+      const existing = await this.employeesRepository.findById(employeeId, tx);
+      if (!existing) throw new NotFoundException("Nhân viên không tồn tại");
+
+      if (!existing.userId) {
+        throw new BadRequestException("Nhân viên này chưa có tài khoản đăng nhập");
+      }
+
+      const unlinkedUserId = existing.userId;
+
+      const updated = await this.employeesRepository.update(
+        employeeId,
+        { user: { disconnect: true } },
+        tx
+      );
+
+      await this.auditLogs.log(
+        {
+          userId: actorId,
+          action: "UPDATE",
+          entity: "Employee",
+          entityId: employeeId,
+          metadata: { action: "UNLINK_USER", unlinkedUserId },
+        },
+        tx
+      );
+
+      return updated;
+    });
+
+    return this.formatEmployee(employee);
+  }
+
+  async createUserAndLink(employeeId: string, dto: CreateUserAccountDto, actorId?: string) {
+    // Hash before opening the transaction — bcrypt is CPU-intensive and would cause
+    // Prisma's interactive transaction to time out if run inside it.
+    const hash = await bcrypt.hash(dto.password, 12);
+
+    const employee = await this.prisma.$transaction(async (tx) => {
+      const existing = await this.employeesRepository.findById(employeeId, tx);
+      if (!existing) throw new NotFoundException("Nhân viên không tồn tại");
+
+      if (existing.userId) {
+        throw new ConflictException(
+          "Nhân viên này đã có tài khoản đăng nhập. Vui lòng hủy liên kết trước."
+        );
+      }
+
+      const emailTaken = await tx.user.findFirst({
+        where: { email: dto.email, deletedAt: null },
+      });
+      if (emailTaken) throw new ConflictException("Email đã được sử dụng bởi tài khoản khác");
+
+      const role = await tx.role.findUnique({ where: { id: dto.roleId } });
+      if (!role) throw new NotFoundException("Vai trò không tồn tại");
+
+      const newUser = await tx.user.create({
+        data: {
+          email: dto.email,
+          password: hash,
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          status: "ACTIVE",
+          userRoles: { create: { roleId: dto.roleId } },
+        },
+      });
+
+      await this.auditLogs.log(
+        { userId: actorId, action: "CREATE", entity: "User", entityId: newUser.id },
+        tx
+      );
+
+      const updated = await this.employeesRepository.update(
+        employeeId,
+        { user: { connect: { id: newUser.id } } },
+        tx
+      );
+
+      await this.auditLogs.log(
+        {
+          userId: actorId,
+          action: "UPDATE",
+          entity: "Employee",
+          entityId: employeeId,
+          metadata: { action: "LINK_USER", linkedUserId: newUser.id },
+        },
+        tx
+      );
+
+      return updated;
+    });
+
+    return this.formatEmployee(employee);
   }
 }

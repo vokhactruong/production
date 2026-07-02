@@ -75,7 +75,9 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto, actorId?: string) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findFirst({
+      where: { email: dto.email, deletedAt: null },
+    });
     if (existing) throw new ConflictException("Email đã được sử dụng");
 
     const hash = await bcrypt.hash(dto.password, 12);
@@ -139,9 +141,27 @@ export class UsersService {
 
   async remove(id: string, actorId?: string) {
     if (id === actorId) throw new BadRequestException("Không thể xóa chính mình");
-    await this.findOne(id);
-    await this.prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.auditLogs.log({ userId: actorId, action: "DELETE", entity: "User", entityId: id });
+
+    await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findFirst({ where: { id, deletedAt: null } });
+      if (!existing) throw new NotFoundException("Người dùng không tồn tại");
+
+      const linkedEmployee = await tx.employee.findFirst({
+        where: { userId: id, deletedAt: null },
+      });
+      if (linkedEmployee) {
+        throw new BadRequestException(
+          "Không thể xóa tài khoản đang liên kết với nhân viên. Vui lòng hủy liên kết trước."
+        );
+      }
+
+      await tx.user.update({ where: { id }, data: { deletedAt: new Date() } });
+      await this.auditLogs.log(
+        { userId: actorId, action: "DELETE", entity: "User", entityId: id },
+        tx
+      );
+    });
+
     return { message: "Xóa người dùng thành công" };
   }
 

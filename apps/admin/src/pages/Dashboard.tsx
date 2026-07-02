@@ -70,7 +70,7 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: dashboardKeys.stats(),
     queryFn: () => dashboardApi.getStats(),
-    enabled: hasPermission(PERMISSIONS.DASHBOARD_VIEW),
+    enabled: hasPermission(PERMISSIONS.DASHBOARD_ANALYTICS),
   });
 
   return (

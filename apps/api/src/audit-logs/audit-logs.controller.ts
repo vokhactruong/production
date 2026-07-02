@@ -39,7 +39,7 @@ export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
 
   @Get()
-  @RequirePermissions("dashboard.view")
+  @RequirePermissions("auditlog.read")
   @ApiOperation({ summary: "Danh sách audit logs" })
   findAll(@Query() query: AuditLogQueryDto) {
     return this.auditLogsService.findAll(query);

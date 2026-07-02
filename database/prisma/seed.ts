@@ -5,6 +5,12 @@ const prisma = new PrismaClient();
 
 const PERMISSIONS_SEED = [
   { name: "View Dashboard", code: "dashboard.view", description: "Truy cập dashboard" },
+  {
+    name: "View Analytics",
+    code: "dashboard.analytics",
+    description: "Xem số liệu thống kê",
+  },
+  { name: "Read Audit Log", code: "auditlog.read", description: "Xem nhật ký audit" },
   { name: "Create User", code: "user.create", description: "Tạo người dùng" },
   { name: "Read User", code: "user.read", description: "Xem người dùng" },
   { name: "Update User", code: "user.update", description: "Sửa người dùng" },
@@ -26,7 +32,6 @@ const PERMISSIONS_SEED = [
   { name: "Update Category", code: "category.update", description: "Sửa danh mục" },
   { name: "Delete Category", code: "category.delete", description: "Xóa danh mục" },
   { name: "Upload File", code: "upload.file", description: "Upload file" },
-  { name: "Update Profile", code: "profile.update", description: "Cập nhật hồ sơ" },
   { name: "Read Student", code: "student.read", description: "Xem học sinh" },
   { name: "Create Student", code: "student.create", description: "Tạo học sinh" },
   { name: "Update Student", code: "student.update", description: "Sửa học sinh" },
@@ -57,6 +62,8 @@ const ROLES_SEED = [
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   "Super Admin": [
     "dashboard.view",
+    "dashboard.analytics",
+    "auditlog.read",
     "user.create",
     "user.read",
     "user.update",
@@ -78,7 +85,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "category.update",
     "category.delete",
     "upload.file",
-    "profile.update",
     "student.read",
     "student.create",
     "student.update",
@@ -98,6 +104,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
   Admin: [
     "dashboard.view",
+    "dashboard.analytics",
+    "auditlog.read",
     "user.create",
     "user.read",
     "user.update",
@@ -119,7 +127,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "category.update",
     "category.delete",
     "upload.file",
-    "profile.update",
     "student.read",
     "student.create",
     "student.update",
@@ -139,6 +146,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
   Editor: [
     "dashboard.view",
+    "dashboard.analytics",
     "article.create",
     "article.read",
     "article.update",
@@ -146,18 +154,17 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "article.publish",
     "category.read",
     "upload.file",
-    "profile.update",
   ],
   Teacher: [
     "dashboard.view",
+    "dashboard.analytics",
     "article.create",
     "article.read",
     "article.update",
     "upload.file",
-    "profile.update",
   ],
-  Student: ["dashboard.view", "profile.update"],
-  Parent: ["dashboard.view", "profile.update"],
+  Student: ["dashboard.view"],
+  Parent: ["dashboard.view"],
 };
 
 const DEFAULT_CATEGORIES = [
@@ -238,7 +245,7 @@ async function main() {
   let adminUser = null;
   for (const u of defaultUsers) {
     const hash = await bcrypt.hash(u.password, 12);
-    const existing = await prisma.user.findUnique({ where: { email: u.email } });
+    const existing = await prisma.user.findFirst({ where: { email: u.email, deletedAt: null } });
 
     let user;
     if (existing) {

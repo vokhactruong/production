@@ -108,6 +108,31 @@ Owners can manage the business from the dashboard.
 
 ---
 
+# Phase 3.9 - Guardian Data Model (Foundational Epic)
+
+Goal:
+
+Model Guardian as a first-class entity instead of flattened fields on Student, so the Parent Portal (Phase 4) can attach a User account to it the same way Employee already attaches to User.
+
+Why now
+
+The Phase 1 Identity & Authorization database audit (2026-07-02) found that `Student.guardianName` / `guardianPhone` / `guardianEmail` are plain string columns with no `Guardian` table and no `Student ↔ Guardian` relation. This duplicates guardian data across siblings (no single source of truth, no dedupe, drift risk) and blocks the Guardian ↔ User linking pattern the PRD requires for Parent Portal.
+
+Features
+
+- `Guardian` model: business profile (firstName, lastName, phone, email), optional 1-1 `userId` link to `User` — same pattern as Employee ↔ User.
+- `StudentGuardian` junction table: `studentId`, `guardianId`, `relationship`, `isPrimary` — many-to-many (siblings share guardians; a student may have more than one guardian).
+- Backfill migration: dedupe existing `Student.guardianName/Phone/Email` values into `Guardian` rows before those columns are deprecated/dropped.
+
+Rules
+
+- Must be completed and stable before Guardian Portal / Parent Portal (Phase 4) implementation starts.
+- Do not duplicate guardian contact info back onto Student once this lands.
+
+Status: Planned
+
+---
+
 # Phase 4 - Parent Experience
 
 Goal:
@@ -188,6 +213,10 @@ Features
 Success
 
 Support hundreds of education centers from one platform.
+
+Known architecture debt (recorded 2026-07-02, not yet implemented)
+
+The Phase 1 Identity & Authorization database audit found that no identity model (`User`, `Role`, `Permission`, `Employee`, `Student`, ...) carries an `organizationId`/`centerId`, and several uniqueness constraints (`User.email`, `Role.name`, `Permission.name`/`code`) are scoped globally rather than per tenant. Introducing multi-tenancy will require re-scoping these to composite unique constraints (`@@unique([organizationId, email])`) across every identity table at once, plus updating every uniqueness check in the auth/employees/roles services in lockstep — budget Phase 7 planning for a breaking migration, not an incremental one.
 
 ---
 

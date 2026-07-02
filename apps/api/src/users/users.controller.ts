@@ -31,7 +31,7 @@ export class UsersController {
   }
 
   @Get("stats")
-  @RequirePermissions("dashboard.view")
+  @RequirePermissions("dashboard.analytics")
   @ApiOperation({ summary: "Thống kê người dùng" })
   getStats() {
     return this.usersService.getStats();

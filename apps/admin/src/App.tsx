@@ -34,6 +34,7 @@ const CourseForm = lazy(() => import("./pages/courses/CourseForm"));
 const Employees = lazy(() => import("./pages/Employees"));
 const EmployeeDetail = lazy(() => import("./pages/employees/EmployeeDetail"));
 const EmployeeForm = lazy(() => import("./pages/employees/EmployeeForm"));
+const EmployeeAccountSetup = lazy(() => import("./pages/employees/EmployeeAccountSetup"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -301,6 +302,14 @@ export default function App() {
                 element={
                   <PermissionRoute permission={PERMISSIONS.EMPLOYEE_UPDATE}>
                     <EmployeeForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/employees/:id/setup-account"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.EMPLOYEE_UPDATE}>
+                    <EmployeeAccountSetup />
                   </PermissionRoute>
                 }
               />

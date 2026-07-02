@@ -221,6 +221,13 @@ export type EmployeeType =
 
 export type EmployeeStatus = "ACTIVE" | "INACTIVE" | "ON_LEAVE" | "RESIGNED";
 
+export interface EmployeeLinkedUser {
+  id: string;
+  email: string;
+  status: string;
+  roles: Array<{ id: string; name: string }>;
+}
+
 export interface Employee {
   id: string;
   code: string;
@@ -236,6 +243,8 @@ export interface Employee {
   hireDate?: string;
   status: EmployeeStatus;
   notes?: string;
+  userId?: string | null;
+  user?: EmployeeLinkedUser | null;
   createdAt: string;
   updatedAt: string;
 }

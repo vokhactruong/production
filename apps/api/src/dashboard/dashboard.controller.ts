@@ -13,7 +13,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get("stats")
-  @RequirePermissions("dashboard.view")
+  @RequirePermissions("dashboard.analytics")
   @ApiOperation({ summary: "Thống kê tổng quan dashboard" })
   getStats(@CurrentUser() user: RequestUser) {
     return this.dashboardService.getStats(user);

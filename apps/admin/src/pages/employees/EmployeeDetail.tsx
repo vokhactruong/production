@@ -14,12 +14,18 @@ import {
   FileEdit,
   FilePlus,
   Trash2,
+  LogIn,
+  UserCheck,
+  UserX,
+  ExternalLink,
 } from "lucide-react";
 import { useEmployee } from "../../features/employees/hooks/use-employee";
 import { useEmployeeActivity } from "../../features/employees/hooks/use-employee-activity";
+import { useUnlinkEmployeeUser } from "../../features/employees/hooks/use-unlink-employee-user";
 import Can from "../../components/Can";
 import { PERMISSIONS } from "../../constants/permissions";
 import { cn, formatDate, formatDateTime, getInitials } from "../../utils";
+import { useToast } from "../../components/Toast";
 import { EMPLOYEE_STATUS_CONFIG, EMPLOYEE_TYPE_CONFIG, GENDER_LABEL } from "./constants";
 import type { Employee } from "../../types";
 
@@ -140,9 +146,104 @@ function DetailSkeleton() {
   );
 }
 
+// ─── Login Account Card ───────────────────────────────────────────────────────
+
+function LoginAccountCard({
+  employee,
+  onSetupAccount,
+  onUnlink,
+  isUnlinking,
+}: {
+  employee: Employee;
+  onSetupAccount: () => void;
+  onUnlink: () => void;
+  isUnlinking: boolean;
+}) {
+  const hasAccount = Boolean(employee.user);
+
+  return (
+    <SectionCard title="Tài khoản đăng nhập" icon={LogIn}>
+      {hasAccount && employee.user ? (
+        <div className="py-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
+              <UserCheck className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-slate-900">{employee.user.email}</p>
+              <p className="text-xs text-slate-400">
+                {employee.user.roles.map((r) => r.name).join(", ") || "Không có vai trò"}
+              </p>
+            </div>
+            <span
+              className={cn(
+                "rounded-lg px-2 py-0.5 text-xs font-medium",
+                employee.user.status === "ACTIVE"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-slate-100 text-slate-600"
+              )}
+            >
+              {employee.user.status === "ACTIVE" ? "Đang hoạt động" : "Không hoạt động"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => window.open(`/users`, "_blank")}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Mở tài khoản
+            </button>
+            <Can permission={PERMISSIONS.EMPLOYEE_UPDATE}>
+              <button
+                onClick={onUnlink}
+                disabled={isUnlinking}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+              >
+                <UserX className="h-3 w-3" />
+                {isUnlinking ? "Đang hủy..." : "Hủy liên kết"}
+              </button>
+            </Can>
+          </div>
+        </div>
+      ) : (
+        <div className="py-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+              <UserX className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-slate-500 italic">Chưa có tài khoản đăng nhập</p>
+            </div>
+          </div>
+          <Can permission={PERMISSIONS.EMPLOYEE_UPDATE}>
+            <button
+              onClick={onSetupAccount}
+              className="self-start inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              <LogIn className="h-3 w-3" />
+              Thiết lập tài khoản
+            </button>
+          </Can>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
-function OverviewTab({ employee }: { employee: Employee }) {
+function OverviewTab({
+  employee,
+  onSetupAccount,
+  onUnlink,
+  isUnlinking,
+}: {
+  employee: Employee;
+  onSetupAccount: () => void;
+  onUnlink: () => void;
+  isUnlinking: boolean;
+}) {
   const typeCfg = EMPLOYEE_TYPE_CONFIG[employee.employeeType];
 
   return (
@@ -178,6 +279,13 @@ function OverviewTab({ employee }: { employee: Employee }) {
           <div className="py-4 text-sm text-slate-700 whitespace-pre-line">{employee.notes}</div>
         </SectionCard>
       )}
+
+      <LoginAccountCard
+        employee={employee}
+        onSetupAccount={onSetupAccount}
+        onUnlink={onUnlink}
+        isUnlinking={isUnlinking}
+      />
     </div>
   );
 }
@@ -270,8 +378,24 @@ export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
+  const { emitToast } = useToast();
 
   const { data: employee, isLoading, isError, refetch } = useEmployee(id);
+  const unlinkMutation = useUnlinkEmployeeUser(id ?? "");
+
+  const handleSetupAccount = () => navigate(`/employees/${id}/setup-account`);
+
+  const handleUnlink = () => {
+    unlinkMutation.mutate(undefined, {
+      onSuccess: () => emitToast("Đã hủy liên kết tài khoản", "success"),
+      onError: (err) => {
+        const msg =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Có lỗi xảy ra";
+        emitToast(msg, "error");
+      },
+    });
+  };
 
   if (isLoading) return <DetailSkeleton />;
 
@@ -409,7 +533,12 @@ export default function EmployeeDetail() {
       {/* Tab Panels */}
       {tab === "overview" && (
         <div role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview">
-          <OverviewTab employee={employee} />
+          <OverviewTab
+            employee={employee}
+            onSetupAccount={handleSetupAccount}
+            onUnlink={handleUnlink}
+            isUnlinking={unlinkMutation.isPending}
+          />
         </div>
       )}
       <div

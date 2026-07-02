@@ -6,4 +6,5 @@ export const employeeKeys = {
   details: () => [...employeeKeys.all, "detail"] as const,
   detail: (id: string) => [...employeeKeys.details(), id] as const,
   activity: (id: string) => [...employeeKeys.detail(id), "activity"] as const,
+  availableUsers: () => [...employeeKeys.all, "available-users"] as const,
 };

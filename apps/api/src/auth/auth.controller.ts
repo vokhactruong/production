@@ -10,8 +10,7 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from "@nestjs/common";
-import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
-import { GoogleAuthGuard } from "./guards/google-auth.guard";
+import { GoogleAuthGuard, GoogleCallbackGuard } from "./guards/google-auth.guard";
 import { Throttle } from "@nestjs/throttler";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { Response, Request } from "express";
@@ -98,16 +97,9 @@ export class AuthController {
 
   @Public()
   @Get("google/callback")
-  @UseGuards(PassportAuthGuard("google"))
+  @UseGuards(GoogleCallbackGuard)
   @ApiOperation({ summary: "Google OAuth callback" })
   async googleCallback(@Req() req: Request & { user: GoogleProfile }, @Res() res: Response) {
-    const stateQuery = req.query?.["state"] as string | undefined;
-    const stateCookie = req.cookies?.["oauth_state"] as string | undefined;
-
-    if (!stateQuery || !stateCookie || stateQuery !== stateCookie) {
-      throw new UnauthorizedException("OAuth state không hợp lệ");
-    }
-
     res.clearCookie("oauth_state");
 
     const result = await this.authService.googleLogin(req.user);

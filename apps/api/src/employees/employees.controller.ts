@@ -14,7 +14,13 @@ import { AuthGuard } from "../auth/guards/auth.guard";
 import { RequirePermissions } from "../auth/decorators/permissions.decorator";
 import { CurrentUser, RequestUser } from "../auth/decorators/current-user.decorator";
 import { EmployeesService } from "./employees.service";
-import { CreateEmployeeDto, UpdateEmployeeDto, EmployeeQueryDto } from "./dto/employee.dto";
+import {
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  EmployeeQueryDto,
+  LinkUserDto,
+  CreateUserAccountDto,
+} from "./dto/employee.dto";
 
 @ApiTags("Employees")
 @ApiBearerAuth()
@@ -28,6 +34,14 @@ export class EmployeesController {
   @ApiOperation({ summary: "Danh sách nhân viên" })
   findAll(@Query() query: EmployeeQueryDto) {
     return this.employeesService.findAll(query);
+  }
+
+  // Must be before :id to avoid route collision
+  @Get("available-users")
+  @RequirePermissions("employee.update")
+  @ApiOperation({ summary: "Danh sách tài khoản chưa liên kết" })
+  findAvailableUsers() {
+    return this.employeesService.findAvailableUsers();
   }
 
   @Get(":id")
@@ -60,5 +74,30 @@ export class EmployeesController {
   @ApiOperation({ summary: "Xóa nhân viên" })
   remove(@Param("id") id: string, @CurrentUser() user: RequestUser) {
     return this.employeesService.remove(id, user.id);
+  }
+
+  @Post(":id/link-user")
+  @RequirePermissions("employee.update")
+  @ApiOperation({ summary: "Liên kết tài khoản hiện có" })
+  linkUser(@Param("id") id: string, @Body() dto: LinkUserDto, @CurrentUser() user: RequestUser) {
+    return this.employeesService.linkUser(id, dto, user.id);
+  }
+
+  @Post(":id/create-user")
+  @RequirePermissions("employee.update")
+  @ApiOperation({ summary: "Tạo tài khoản mới và liên kết" })
+  createUserAndLink(
+    @Param("id") id: string,
+    @Body() dto: CreateUserAccountDto,
+    @CurrentUser() user: RequestUser
+  ) {
+    return this.employeesService.createUserAndLink(id, dto, user.id);
+  }
+
+  @Delete(":id/unlink-user")
+  @RequirePermissions("employee.update")
+  @ApiOperation({ summary: "Hủy liên kết tài khoản" })
+  unlinkUser(@Param("id") id: string, @CurrentUser() user: RequestUser) {
+    return this.employeesService.unlinkUser(id, user.id);
   }
 }

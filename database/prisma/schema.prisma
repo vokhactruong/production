@@ -10,7 +10,11 @@ datasource db {
 
 model User {
   id            String         @id @default(cuid())
-  email         String         @unique
+  /// Uniqueness enforced via a partial unique index (email WHERE "deletedAt" IS NULL) —
+  /// see migration 20260702010000_partial_unique_active_email — so a soft-deleted
+  /// user's email can be reused. Not marked @unique: Prisma's schema DSL cannot express
+  /// partial indexes, so all lookups must go through findFirst with deletedAt: null.
+  email         String
   password      String?
   firstName     String
   lastName      String

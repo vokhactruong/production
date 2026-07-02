@@ -4,6 +4,17 @@ import { PrismaService } from "../prisma/prisma.service";
 
 type Tx = Prisma.TransactionClient;
 
+const USER_SELECT_FOR_EMPLOYEE = {
+  id: true,
+  email: true,
+  status: true,
+  userRoles: {
+    select: {
+      role: { select: { id: true, name: true } },
+    },
+  },
+} satisfies Prisma.UserSelect;
+
 const EMPLOYEE_SELECT = {
   id: true,
   code: true,
@@ -19,6 +30,8 @@ const EMPLOYEE_SELECT = {
   hireDate: true,
   status: true,
   notes: true,
+  userId: true,
+  user: { select: USER_SELECT_FOR_EMPLOYEE },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.EmployeeSelect;
@@ -72,6 +85,13 @@ export class EmployeesRepository {
   async findByPhone(phone: string, excludeId?: string): Promise<EmployeeRecord | null> {
     return this.prisma.employee.findFirst({
       where: { phone, deletedAt: null, ...(excludeId && { id: { not: excludeId } }) },
+      select: EMPLOYEE_SELECT,
+    });
+  }
+
+  async findByUserId(userId: string, excludeId?: string): Promise<EmployeeRecord | null> {
+    return this.prisma.employee.findFirst({
+      where: { userId, deletedAt: null, ...(excludeId && { id: { not: excludeId } }) },
       select: EMPLOYEE_SELECT,
     });
   }

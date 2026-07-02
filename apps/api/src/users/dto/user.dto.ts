@@ -9,6 +9,7 @@ import {
   Matches,
   IsNumber,
   Min,
+  Max,
   MaxLength,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
@@ -102,5 +103,6 @@ export class UserQueryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
+  @Max(100)
   limit?: number = 10;
 }

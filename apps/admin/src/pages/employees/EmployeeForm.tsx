@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, UserPlus } from "lucide-react";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEmployee } from "../../features/employees/hooks/use-employee";
@@ -11,7 +11,9 @@ import { useCreateEmployee } from "../../features/employees/hooks/use-create-emp
 import { useUpdateEmployee } from "../../features/employees/hooks/use-update-employee";
 import { employeeKeys } from "../../features/employees/hooks/query-keys";
 import { useToast } from "../../components/Toast";
+import { getData } from "../../lib/api-client";
 import { cn } from "../../utils";
+import type { Employee } from "../../types";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -177,6 +179,7 @@ export default function EmployeeForm() {
   const navigate = useNavigate();
   const { emitToast } = useToast();
   const qc = useQueryClient();
+  const [setupAccount, setSetupAccount] = useState(false);
 
   const {
     data: employee,
@@ -228,12 +231,20 @@ export default function EmployeeForm() {
     try {
       if (isEdit) {
         await updateMutation.mutateAsync(payload);
+        await qc.refetchQueries({ queryKey: employeeKeys.lists(), type: "all" });
+        emitToast("Đã cập nhật nhân viên", "success");
+        navigate("/employees");
       } else {
-        await createMutation.mutateAsync(payload);
+        const response = await createMutation.mutateAsync(payload);
+        const created = getData<Employee>(response);
+        await qc.refetchQueries({ queryKey: employeeKeys.lists(), type: "all" });
+        if (setupAccount) {
+          navigate(`/employees/${created.id}/setup-account`);
+        } else {
+          emitToast("Đã tạo nhân viên", "success");
+          navigate("/employees");
+        }
       }
-      await qc.refetchQueries({ queryKey: employeeKeys.lists(), type: "all" });
-      emitToast(isEdit ? "Đã cập nhật nhân viên" : "Đã tạo nhân viên", "success");
-      navigate("/employees");
     } catch (err) {
       const msg = axios.isAxiosError(err)
         ? ((err.response?.data as { message?: string })?.message ?? "Có lỗi xảy ra")
@@ -465,6 +476,29 @@ export default function EmployeeForm() {
               </Field>
             </div>
           </Section>
+
+          {/* Setup Account Checkbox — create mode only */}
+          {!isEdit && (
+            <Section title="Tài khoản đăng nhập">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={setupAccount}
+                  onChange={(e) => setSetupAccount(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                    <UserPlus className="h-3.5 w-3.5 text-slate-500" />
+                    Thiết lập tài khoản đăng nhập sau khi tạo nhân viên
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    Bạn sẽ được chuyển đến trang thiết lập ngay sau khi hồ sơ được lưu
+                  </span>
+                </div>
+              </label>
+            </Section>
+          )}
 
           {/* Footer */}
           <div className="flex justify-end gap-3 pb-2">

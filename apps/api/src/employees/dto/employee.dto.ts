@@ -7,7 +7,9 @@ import {
   IsNumber,
   IsDateString,
   MaxLength,
+  MinLength,
   Min,
+  Max,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
@@ -221,5 +223,29 @@ export class EmployeeQueryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
+  @Max(100)
   limit?: number = 10;
+}
+
+export class LinkUserDto {
+  @ApiProperty({ description: "ID của tài khoản người dùng cần liên kết" })
+  @IsString()
+  @IsNotEmpty()
+  userId!: string;
+}
+
+export class CreateUserAccountDto {
+  @ApiProperty({ description: "Email đăng nhập" })
+  @IsEmail({}, { message: "Email không hợp lệ" })
+  email!: string;
+
+  @ApiProperty({ description: "Mật khẩu tạm thời (tối thiểu 8 ký tự)" })
+  @IsString()
+  @MinLength(8, { message: "Mật khẩu phải có ít nhất 8 ký tự" })
+  password!: string;
+
+  @ApiProperty({ description: "ID của vai trò" })
+  @IsString()
+  @IsNotEmpty()
+  roleId!: string;
 }

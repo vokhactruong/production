@@ -1,5 +1,7 @@
 export const PERMISSIONS = {
   DASHBOARD_VIEW: "dashboard.view",
+  DASHBOARD_ANALYTICS: "dashboard.analytics",
+  AUDITLOG_READ: "auditlog.read",
   USER_READ: "user.read",
   USER_CREATE: "user.create",
   USER_UPDATE: "user.update",
@@ -21,7 +23,6 @@ export const PERMISSIONS = {
   CATEGORY_UPDATE: "category.update",
   CATEGORY_DELETE: "category.delete",
   UPLOAD_FILE: "upload.file",
-  PROFILE_UPDATE: "profile.update",
   STUDENT_READ: "student.read",
   STUDENT_CREATE: "student.create",
   STUDENT_UPDATE: "student.update",

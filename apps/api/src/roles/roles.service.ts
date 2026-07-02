@@ -4,9 +4,19 @@ import {
   BadRequestException,
   ConflictException,
 } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateRoleDto, UpdateRoleDto, AssignPermissionsDto } from "./dto/role.dto";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
+
+function isNameConflict(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === "P2002" &&
+    Array.isArray(err.meta?.target) &&
+    (err.meta.target as string[]).includes("name")
+  );
+}
 
 const ROLE_SELECT = {
   id: true,
@@ -46,10 +56,17 @@ export class RolesService {
     const existing = await this.prisma.role.findUnique({ where: { name: dto.name } });
     if (existing) throw new ConflictException("Tên vai trò đã tồn tại");
 
-    const role = await this.prisma.role.create({
-      data: { name: dto.name, description: dto.description },
-      select: ROLE_SELECT,
-    });
+    let role;
+    try {
+      role = await this.prisma.role.create({
+        data: { name: dto.name, description: dto.description },
+        select: ROLE_SELECT,
+      });
+    } catch (err) {
+      if (isNameConflict(err)) throw new ConflictException("Tên vai trò đã tồn tại");
+      throw err;
+    }
+
     await this.auditLogs.log({
       userId: actorId,
       action: "CREATE",
@@ -67,7 +84,14 @@ export class RolesService {
       if (existing) throw new ConflictException("Tên vai trò đã tồn tại");
     }
 
-    const role = await this.prisma.role.update({ where: { id }, data: dto, select: ROLE_SELECT });
+    let role;
+    try {
+      role = await this.prisma.role.update({ where: { id }, data: dto, select: ROLE_SELECT });
+    } catch (err) {
+      if (isNameConflict(err)) throw new ConflictException("Tên vai trò đã tồn tại");
+      throw err;
+    }
+
     await this.auditLogs.log({ userId: actorId, action: "UPDATE", entity: "Role", entityId: id });
     return this.formatRole(role);
   }
