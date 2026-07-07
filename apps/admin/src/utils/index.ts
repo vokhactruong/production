@@ -25,6 +25,16 @@ export function formatDateTime(date: string | Date | null | undefined): string {
   }).format(new Date(date));
 }
 
+export function formatTime(time: string | null | undefined): string {
+  if (!time) return "—";
+  // Time-of-day values (e.g. ClassSession.startTime/endTime) are stored and
+  // returned as an ISO datetime string with a fixed epoch date (1970-01-01) in
+  // UTC. Slice the string directly rather than parsing as a Date — doing the
+  // latter would apply the browser's local timezone offset to a value that
+  // has no real date component, silently shifting the displayed hour.
+  return time.slice(11, 16);
+}
+
 export function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 }

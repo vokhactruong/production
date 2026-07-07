@@ -35,6 +35,16 @@ const Employees = lazy(() => import("./pages/Employees"));
 const EmployeeDetail = lazy(() => import("./pages/employees/EmployeeDetail"));
 const EmployeeForm = lazy(() => import("./pages/employees/EmployeeForm"));
 const EmployeeAccountSetup = lazy(() => import("./pages/employees/EmployeeAccountSetup"));
+const Classrooms = lazy(() => import("./pages/Classrooms"));
+const ClassroomDetail = lazy(() => import("./pages/classrooms/ClassroomDetail"));
+const ClassroomForm = lazy(() => import("./pages/classrooms/ClassroomForm"));
+const Classes = lazy(() => import("./pages/Classes"));
+const ClassDetail = lazy(() => import("./pages/classes/ClassDetail"));
+const ClassForm = lazy(() => import("./pages/classes/ClassForm"));
+const Enrollments = lazy(() => import("./pages/Enrollments"));
+const EnrollmentDetail = lazy(() => import("./pages/enrollments/EnrollmentDetail"));
+const EnrollmentForm = lazy(() => import("./pages/enrollments/EnrollmentForm"));
+const ClassSessionForm = lazy(() => import("./pages/class-sessions/ClassSessionForm"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -310,6 +320,110 @@ export default function App() {
                 element={
                   <PermissionRoute permission={PERMISSIONS.EMPLOYEE_UPDATE}>
                     <EmployeeAccountSetup />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classrooms"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASSROOM_READ}>
+                    <Classrooms />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classrooms/new"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASSROOM_CREATE}>
+                    <ClassroomForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classrooms/:id"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASSROOM_READ}>
+                    <ClassroomDetail />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classrooms/:id/edit"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASSROOM_UPDATE}>
+                    <ClassroomForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classes"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASS_READ}>
+                    <Classes />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classes/new"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASS_CREATE}>
+                    <ClassForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classes/:id"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASS_READ}>
+                    <ClassDetail />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/classes/:id/edit"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASS_UPDATE}>
+                    <ClassForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/enrollments"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.ENROLLMENT_READ}>
+                    <Enrollments />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/enrollments/new"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.ENROLLMENT_CREATE}>
+                    <EnrollmentForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/enrollments/:id"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.ENROLLMENT_READ}>
+                    <EnrollmentDetail />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/enrollments/:id/edit"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.ENROLLMENT_UPDATE}>
+                    <EnrollmentForm />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/class-sessions/:id/edit"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.CLASS_SESSION_UPDATE}>
+                    <ClassSessionForm />
                   </PermissionRoute>
                 }
               />

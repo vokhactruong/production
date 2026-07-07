@@ -17,6 +17,9 @@ import {
   LogOut,
   X,
   Briefcase,
+  DoorOpen,
+  Layers,
+  ClipboardList,
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
@@ -54,6 +57,24 @@ const MENU = [
     icon: Briefcase,
     label: "Nhân viên",
     permission: PERMISSIONS.EMPLOYEE_READ,
+  },
+  {
+    href: "/classrooms",
+    icon: DoorOpen,
+    label: "Phòng học",
+    permission: PERMISSIONS.CLASSROOM_READ,
+  },
+  {
+    href: "/classes",
+    icon: Layers,
+    label: "Lớp học",
+    permission: PERMISSIONS.CLASS_READ,
+  },
+  {
+    href: "/enrollments",
+    icon: ClipboardList,
+    label: "Đăng ký học",
+    permission: PERMISSIONS.ENROLLMENT_READ,
   },
   { href: "/roles", icon: Shield, label: "Vai trò", permission: PERMISSIONS.ROLE_READ },
   { href: "/permissions", icon: Key, label: "Quyền hạn", permission: PERMISSIONS.PERMISSION_READ },
