@@ -169,6 +169,7 @@ model Student {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   code          String?       @unique
+  enrollments   Enrollment[]
 
   @@index([status])
   @@index([deletedAt])
@@ -248,6 +249,7 @@ model Subject {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   courses     Course[]
+  classes     Class[]
 
   @@index([status])
   @@index([deletedAt])
@@ -301,6 +303,7 @@ model Employee {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   user         User?          @relation(fields: [userId], references: [id])
+  classes      Class[]
 
   @@index([status])
   @@index([employeeType])
@@ -324,10 +327,190 @@ model Course {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   subject        Subject      @relation(fields: [subjectId], references: [id])
+  classes        Class[]
 
   @@index([subjectId])
   @@index([deletedAt])
   @@index([status])
   @@index([displayOrder])
   @@map("courses")
+}
+
+enum ClassroomType {
+  PHYSICAL
+  ONLINE
+  LAB
+}
+
+model Classroom {
+  id          String        @id @default(cuid())
+  /// Uniqueness enforced via a partial unique index (code WHERE "deletedAt" IS NULL) —
+  /// see migration 20260703010000_partial_unique_active_classroom_code — so a soft-deleted
+  /// classroom's code can be reused. Not marked @unique: Prisma's schema DSL cannot express
+  /// partial indexes, so all lookups must go through findFirst with deletedAt: null.
+  code        String
+  name        String
+  type        ClassroomType
+  capacity    Int
+  description String?
+  isActive    Boolean       @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  classes     Class[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("classrooms")
+}
+
+enum ClassStatus {
+  PLANNING
+  OPEN
+  FULL
+  COMPLETED
+  CANCELLED
+}
+
+model Class {
+  id             String          @id @default(cuid())
+  /// Uniqueness enforced via a partial unique index (code WHERE "deletedAt" IS NULL) —
+  /// see migration 20260704000000_add_class — so a soft-deleted class's code can be
+  /// reused. Not marked @unique: Prisma's schema DSL cannot express partial indexes,
+  /// so all lookups must go through findFirst with deletedAt: null.
+  code           String
+  name           String
+  courseId       String
+  subjectId      String
+  classroomId    String
+  employeeId     String
+  status         ClassStatus     @default(PLANNING)
+  capacity       Int
+  sessionCount   Int             @default(15)
+  startDate      DateTime
+  endDate        DateTime
+  description    String?
+  isActive       Boolean         @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  course         Course          @relation(fields: [courseId], references: [id])
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+  classroom      Classroom       @relation(fields: [classroomId], references: [id])
+  employee       Employee        @relation(fields: [employeeId], references: [id])
+  enrollments    Enrollment[]
+  classSessions  ClassSession[]
+  classSchedules ClassSchedule[]
+
+  @@index([courseId])
+  @@index([subjectId])
+  @@index([classroomId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("classes")
+}
+
+/// The Planning Layer of the Scheduling Engine: a Class's recurring weekly
+/// slots (e.g. "every Monday 18:00-20:00"). This is the source of truth the
+/// generation engine reads from to produce ClassSession rows (the Execution
+/// Layer) — see SchedulingService. Editing a ClassSchedule never touches
+/// already-generated ClassSession rows; it only affects future generate/sync
+/// runs.
+model ClassSchedule {
+  id        String    @id @default(cuid())
+  classId   String
+  /// 0 = Sunday .. 6 = Saturday, matching JS Date#getUTCDay().
+  weekday   Int
+  /// Uniqueness of (classId, weekday, startTime) enforced via a partial unique
+  /// index WHERE "deletedAt" IS NULL — see migration
+  /// 20260708000000_add_class_schedule. Unlike ClassSession.sessionNumber,
+  /// this is not a permanent business identifier — it's just the current set
+  /// of active weekly slots, so a soft-deleted slot's (weekday, startTime) can
+  /// be freely reused by a new slot. Not marked @@unique: Prisma's schema DSL
+  /// cannot express partial indexes, so all lookups must go through
+  /// findFirst/findMany with deletedAt: null.
+  startTime DateTime  @db.Time
+  endTime   DateTime  @db.Time
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  class     Class     @relation(fields: [classId], references: [id])
+
+  @@index([classId])
+  @@index([deletedAt])
+  @@map("class_schedules")
+}
+
+enum ClassSessionStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+model ClassSession {
+  id            String             @id @default(cuid())
+  classId       String
+  /// sessionNumber is a business identifier (like an invoice or order number),
+  /// not just a uniqueness key — teachers/staff refer to "Session 8" as a
+  /// permanent label. It must never be reused, even after the session is
+  /// soft-deleted, so this is a full (not partial) unique constraint, and
+  /// generateNextSessionNumber() computes MAX(sessionNumber) across ALL rows
+  /// for the Class, including soft-deleted ones. See migration
+  /// 20260707000000_class_session_number_never_reused.
+  sessionNumber Int
+  status        ClassSessionStatus @default(PLANNED)
+  date          DateTime
+  startTime     DateTime           @db.Time
+  endTime       DateTime           @db.Time
+  topic         String?
+  note          String?
+  deletedAt     DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  class         Class              @relation(fields: [classId], references: [id])
+
+  @@unique([classId, sessionNumber])
+  @@index([classId])
+  @@index([status])
+  @@index([date])
+  @@index([deletedAt])
+  @@map("class_sessions")
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+model Enrollment {
+  id                   String           @id @default(cuid())
+  studentId            String
+  classId              String
+  /// "One Student cannot have two ACTIVE Enrollments in the same Class" is enforced via
+  /// a partial unique index on (studentId, classId) WHERE status = 'ACTIVE' AND "deletedAt"
+  /// IS NULL — see migration 20260705000000_add_enrollment. Not expressible as @@unique in
+  /// Prisma's schema DSL (partial indexes aren't supported), so the app-level check in
+  /// EnrollmentsService is the primary guard and this index is the race-condition backstop.
+  status               EnrollmentStatus @default(ACTIVE)
+  joinedAt             DateTime
+  billingCycleSessions Int
+  note                 String?
+  deletedAt            DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  student              Student          @relation(fields: [studentId], references: [id])
+  class                Class            @relation(fields: [classId], references: [id])
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("enrollments")
 }

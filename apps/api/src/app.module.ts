@@ -17,6 +17,12 @@ import { StudentsModule } from "./students/students.module";
 import { SubjectsModule } from "./subjects/subjects.module";
 import { CoursesModule } from "./courses/courses.module";
 import { EmployeesModule } from "./employees/employees.module";
+import { ClassroomsModule } from "./classrooms/classrooms.module";
+import { ClassesModule } from "./classes/classes.module";
+import { EnrollmentsModule } from "./enrollments/enrollments.module";
+import { ClassSessionsModule } from "./class-sessions/class-sessions.module";
+import { ClassSchedulesModule } from "./class-schedules/class-schedules.module";
+import { SchedulingModule } from "./scheduling/scheduling.module";
 
 @Module({
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
@@ -38,6 +44,12 @@ import { EmployeesModule } from "./employees/employees.module";
     SubjectsModule,
     CoursesModule,
     EmployeesModule,
+    ClassroomsModule,
+    ClassesModule,
+    EnrollmentsModule,
+    ClassSessionsModule,
+    ClassSchedulesModule,
+    SchedulingModule,
   ],
 })
 export class AppModule {}
