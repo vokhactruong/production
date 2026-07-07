@@ -45,21 +45,48 @@ Features
 - Student Management ✅
 - Employee Management ✅
 - Courses ✅
-- Classroom
-- Class
-- Enrollment
+- Classroom ✅
+- Class ✅
+- Enrollment ✅
+- Class Schedule (Planning Layer) ✅
+- Class Session (Execution Layer, schedule-generated) ✅
 - Attendance
 - Tuition
-- Scheduling
 - Notifications
 
 Next
 
-Classroom → Class → Enrollment → Attendance → Payment
+Attendance → Payment
 
 Success
 
 A center should be able to operate daily without spreadsheets.
+
+---
+
+## Scheduling Engine v1 (2026-07-05)
+
+The Class Session module was refactored from manual session creation into a
+Schedule-driven engine. See BUSINESS.md ("Scheduling Engine: Planning Layer vs
+Execution Layer") and DATABASE.md (ClassSchedule / ClassSession) for the full
+model.
+
+Course → Class → **Class Schedule** → **Generate Sessions** → Class Session → Attendance → Payment → Invoice
+
+Administrators no longer create Class Sessions directly. They define a
+Class's weekly Class Schedule, then generate Sessions from it
+(`POST /classes/:id/generate-sessions`) once the Class is OPEN, and later
+append any missing future Sessions after a schedule change
+(`POST /classes/:id/sync-sessions`). Manual editing of an individual Session
+(date/status/topic/note) remains supported as an exception mechanism (holiday,
+teacher request, reschedule) and never modifies the Class Schedule itself.
+
+Deferred to a future phase (additive only, no refactor expected):
+
+- Automatic rolling generation, holiday calendar, recurring exceptions
+- Teacher/Classroom replacement per individual Session
+- Bulk reschedule, notifications, calendar sync (Google/Outlook/Apple)
+- QR / face / NFC attendance, offline sync, mobile teacher app
 
 ---
 

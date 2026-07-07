@@ -85,6 +85,56 @@ When Guardian and Student portals are implemented, the same pattern applies:
 
 ---
 
+# Scheduling Engine: ClassSchedule (Planning) → ClassSession (Execution)
+
+```
+Class
+  startDate
+  sessionCount
+  status
+        |
+        | 1
+        |
+        N
+ClassSchedule (Planning Layer)          ← source of truth for the recurring pattern
+  id
+  classId
+  weekday        (0=Sunday..6=Saturday)
+  startTime      (TIME)
+  endTime        (TIME)
+        |
+        | read by SchedulingService.generateInitialSessions / syncMissingSessions
+        ↓
+ClassSession (Execution Layer)          ← generated business data, one row per actual session
+  id
+  classId
+  sessionNumber  (permanent sequence, never reused, even across soft deletes)
+  date
+  status
+  topic
+  note
+```
+
+Relationship: `Class 1 ↔ N ClassSchedule` and `Class 1 ↔ N ClassSession`. `ClassSchedule` has no relationship to `ClassSession` directly — the link is one-directional and computation-only: the generation algorithm reads the Class's active `ClassSchedule` rows plus `Class.startDate` and `Class.sessionCount` to produce `ClassSession` rows. There is no FK from `ClassSession` back to `ClassSchedule`.
+
+Why they are separate tables
+
+`ClassSchedule` is a template ("this Class meets every Monday 18:00-20:00"). `ClassSession` is history ("this Class actually met on 2026-08-03"). Editing the template must never rewrite history: changing a weekly time slot does not retroactively change sessions that were already generated, and manually rescheduling one session (holiday, teacher request, power outage) must never write back to the template. Keeping them as separate models is what makes both directions safe.
+
+Why sessionNumber is a full unique constraint, not partial
+
+Unlike most soft-deletable business codes in this schema (Classroom.code, Class.code), `ClassSession.sessionNumber` is scoped with a full `@@unique([classId, sessionNumber])`, not a partial index excluding soft-deleted rows. A session number is a permanent business identifier ("Session 8"), not just a uniqueness key — reusing it after a delete would let two different physical sessions share the same label over time, which is unrecoverably confusing once Attendance, Payment, and Reports start referencing "Session 8". `findMaxSessionNumber` therefore intentionally includes soft-deleted rows when computing the next number.
+
+Why ClassSchedule's uniqueness is partial (the opposite choice)
+
+A `ClassSchedule` slot is not a business identifier — it's just the current set of active weekly meeting times. Deleting a slot and adding a new one at the same `(weekday, startTime)` is a normal edit, not a historical record, so its uniqueness is scoped to `WHERE "deletedAt" IS NULL` and a freed slot can be reused immediately.
+
+What ClassSession must never store
+
+Per Attendance/Payment compatibility: `ClassSession` never stores student data (Attendance owns participation, referencing `Enrollment + ClassSession`) and never stores financial data (Payment consumes `Attendance + Enrollment + ClassSession`). Teacher and Classroom are always derived from `Class.employeeId` / `Class.classroomId` — never duplicated onto the session — so a future "Teacher/Classroom Replacement per Session" feature can extend `ClassSession` additively without a redesign.
+
+---
+
 ---
 
 # Naming

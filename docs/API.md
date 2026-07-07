@@ -39,6 +39,39 @@ Employee API must never handle authentication, passwords, tokens, or roles.
 
 Linking an Employee to a User account is a separate future operation and must not be part of standard Employee CRUD.
 
+## Class Schedule API → Planning Layer CRUD
+
+Endpoints: `/class-schedules`
+
+Responsibilities:
+
+- CRUD for a Class's recurring weekly slots (weekday + startTime + endTime)
+- Validation only: no duplicate (weekday, startTime) per Class, startTime < endTime, blocked while the parent Class is COMPLETED/CANCELLED
+
+Class Schedule API must never create, modify, or delete Class Session rows. It is read-only input to the Scheduling API below.
+
+## Class Session API → Execution Layer (read + manual exception only)
+
+Endpoints: `/class-sessions`
+
+Responsibilities:
+
+- Read (list/detail), search, filter, pagination
+- Update only: date, status, topic, note — a manual business exception (holiday, teacher request, reschedule), never classId or sessionNumber
+- Soft delete, only while status is PLANNED or CANCELLED
+
+There is no `POST /class-sessions`. Class Session is generated business data — see Scheduling API.
+
+## Scheduling API → Generation Engine
+
+Endpoints: `POST /classes/:id/generate-sessions`, `POST /classes/:id/sync-sessions`
+
+Responsibilities:
+
+- `generate-sessions`: create the full initial batch of Class Sessions from the Class's Class Schedule + startDate + sessionCount. Only when the Class is OPEN and has zero existing Sessions.
+- `sync-sessions`: idempotently append only missing future Sessions after a schedule change (e.g. a new weekly slot was added). Never overwrites existing Sessions, never recreates a soft-deleted Session, never backfills a past date. Only when the Class is OPEN.
+- Both return `{ generatedCount, existingCount, totalSessions }`.
+
 ---
 
 # API Style

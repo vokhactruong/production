@@ -407,3 +407,46 @@ When creating a Class later:
 are copied from Course as snapshots.
 
 Future updates to Course must NOT affect existing Classes.
+
+---
+
+# Scheduling Engine: Planning Layer vs Execution Layer
+
+Course → Class → **Class Schedule** → **Generate Sessions** → Class Session → Attendance → Payment → Invoice
+
+Each layer has exactly one responsibility.
+
+Class Schedule — Planning Layer
+
+- The recurring weekly template a Class meets on (e.g. "every Monday 18:00-20:00").
+- Source of truth for what the generation engine produces.
+- Editing it only affects future generate/sync runs — it never rewrites already-generated Sessions.
+
+Class Session — Execution Layer
+
+- Generated business data: one row per actual teaching day.
+- Not manually created. Produced only by Generate Initial Sessions / Sync Missing Sessions.
+- Manual edits (date/status/topic/note) represent a business exception — holiday, teacher request, center reschedule, weather, power outage — never a change to the Class Schedule.
+
+Attendance — Participation Layer (future)
+
+- References Enrollment + Class Session. Never stored on Class Session itself.
+
+Payment — Financial Layer (future)
+
+- Consumes Attendance + Enrollment + Class Session. Never stored on Class Session itself.
+
+## Class Workflow
+
+A Class is planned first (status PLANNING) → administrator defines weekly Class Schedules → Class becomes OPEN → administrator generates Sessions → teachers teach Sessions → Attendance is recorded → Payment calculates completed sessions.
+
+| Class status | Class Schedule | Generate Sessions                | Sync Missing Sessions |
+| ------------ | -------------- | -------------------------------- | --------------------- |
+| PLANNING     | editable       | blocked                          | blocked               |
+| OPEN         | editable       | allowed (only if none exist yet) | allowed               |
+| COMPLETED    | locked         | blocked                          | blocked               |
+| CANCELLED    | locked         | blocked                          | blocked               |
+
+## Session Number
+
+A session number (e.g. "Session 8") is a permanent business identifier, the same way an invoice or order number is — not just a sequence for uniqueness. Once assigned it is never reused, even if that session is later deleted, because Attendance, Payment, Parent/Teacher Portals, Reports, and Audit will all reference it by that number going forward, and two different physical sessions sharing one label would be permanently confusing.
