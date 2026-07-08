@@ -77,6 +77,14 @@ const PERMISSIONS_SEED = [
   { name: "Create Class Schedule", code: "class_schedule.create", description: "Tạo lịch học" },
   { name: "Update Class Schedule", code: "class_schedule.update", description: "Sửa lịch học" },
   { name: "Delete Class Schedule", code: "class_schedule.delete", description: "Xóa lịch học" },
+  { name: "Read Attendance", code: "attendance.read", description: "Xem điểm danh" },
+  { name: "Create Attendance", code: "attendance.create", description: "Tạo điểm danh" },
+  { name: "Update Attendance", code: "attendance.update", description: "Sửa điểm danh" },
+  {
+    name: "Correct Attendance",
+    code: "attendance.correct",
+    description: "Sửa điểm danh sau thời hạn 48 giờ",
+  },
 ];
 
 const ROLES_SEED = [
@@ -151,6 +159,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "class_schedule.create",
     "class_schedule.update",
     "class_schedule.delete",
+    "attendance.read",
+    "attendance.create",
+    "attendance.update",
+    "attendance.correct",
   ],
   Admin: [
     "dashboard.view",
@@ -214,6 +226,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "class_schedule.create",
     "class_schedule.update",
     "class_schedule.delete",
+    "attendance.read",
+    "attendance.create",
+    "attendance.update",
+    "attendance.correct",
   ],
   Editor: [
     "dashboard.view",
@@ -233,6 +249,12 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "article.read",
     "article.update",
     "upload.file",
+    // First operational Teacher grant: teachers record and fix attendance
+    // within the 48h window, but post-48h corrections (attendance.correct)
+    // stay Admin-tier only.
+    "attendance.read",
+    "attendance.create",
+    "attendance.update",
   ],
   Student: ["dashboard.view"],
   Parent: ["dashboard.view"],
