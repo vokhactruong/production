@@ -60,4 +60,8 @@ export const PERMISSIONS = {
   CLASS_SCHEDULE_CREATE: "class_schedule.create",
   CLASS_SCHEDULE_UPDATE: "class_schedule.update",
   CLASS_SCHEDULE_DELETE: "class_schedule.delete",
+  ATTENDANCE_READ: "attendance.read",
+  ATTENDANCE_CREATE: "attendance.create",
+  ATTENDANCE_UPDATE: "attendance.update",
+  ATTENDANCE_CORRECT: "attendance.correct",
 } as const;

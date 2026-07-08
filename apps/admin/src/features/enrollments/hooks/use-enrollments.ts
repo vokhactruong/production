@@ -10,6 +10,7 @@ interface EnrollmentFilters {
   classId?: string;
   status?: string;
   page?: number;
+  limit?: number;
 }
 
 export function useEnrollments(filters: EnrollmentFilters) {
@@ -23,7 +24,7 @@ export function useEnrollments(filters: EnrollmentFilters) {
           classId: filters.classId || undefined,
           status: filters.status || undefined,
           page: filters.page,
-          limit: 10,
+          limit: filters.limit ?? 10,
         })
         .then((res) => getList<Enrollment>(res)),
   });

@@ -43,6 +43,9 @@ function SkeletonRow() {
       <td className="hidden px-4 py-3.5 md:table-cell">
         <div className="h-3.5 w-20 rounded-md bg-slate-200" />
       </td>
+      <td className="hidden px-4 py-3.5 lg:table-cell">
+        <div className="h-3.5 w-16 rounded-md bg-slate-200" />
+      </td>
       <td className="px-4 py-3.5">
         <div className="h-5 w-20 rounded-lg bg-slate-200" />
       </td>
@@ -178,6 +181,23 @@ const EnrollmentRow = memo(function EnrollmentRow({
       {/* Joined Date */}
       <td className="hidden px-4 py-3.5 md:table-cell">
         <span className="text-sm text-slate-600">{formatDate(e.joinedAt)}</span>
+      </td>
+
+      {/* Remaining lessons — derived by the API (display only, no client math) */}
+      <td className="hidden px-4 py-3.5 lg:table-cell">
+        {typeof e.remaining === "number" ? (
+          <span
+            className={cn(
+              "text-sm font-semibold",
+              e.remaining <= 0 ? "text-red-600" : "text-slate-700"
+            )}
+          >
+            {e.remaining}/{e.billingCycleSessions}
+            <span className="ml-1 font-normal text-xs text-slate-400">buổi</span>
+          </span>
+        ) : (
+          <span className="text-slate-300">—</span>
+        )}
       </td>
 
       {/* Status */}
@@ -430,6 +450,9 @@ export default function Enrollments() {
                 <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 md:table-cell">
                   Ngày tham gia
                 </th>
+                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 lg:table-cell">
+                  Buổi còn lại
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Trạng thái
                 </th>
@@ -443,7 +466,7 @@ export default function Enrollments() {
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3 text-slate-400">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
                         <AlertCircle className="h-6 w-6 text-red-400" />
@@ -457,7 +480,7 @@ export default function Enrollments() {
                 </tr>
               ) : enrollmentsData?.items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3 text-slate-400">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
                         <ClipboardList className="h-7 w-7 text-slate-400" />

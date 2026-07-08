@@ -33,6 +33,8 @@ export type {
   EnrollmentStatus,
   ClassSession,
   ClassSessionStatus,
+  Attendance,
+  AttendanceStatus,
   ClassSchedule,
   GenerateSessionsResult,
 } from "@school/types";

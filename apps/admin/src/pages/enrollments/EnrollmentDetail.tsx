@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Pencil,
+  ClipboardCheck,
   ClipboardList,
   Activity,
   Clock,
@@ -166,6 +167,33 @@ function OverviewTab({ enrollment: e }: { enrollment: Enrollment }) {
           label="Số buổi / chu kỳ thanh toán"
           value={
             <span className="font-semibold text-slate-900">{e.billingCycleSessions} buổi</span>
+          }
+        />
+        {/* Derived balance — computed by the API from attendance evidence
+            (display only, never recomputed on the client) */}
+        <InfoRow
+          icon={ClipboardCheck}
+          label="Buổi đã học (tính phí)"
+          value={
+            typeof e.consumed === "number" ? (
+              <span className="font-semibold text-slate-900">{e.consumed} buổi</span>
+            ) : undefined
+          }
+        />
+        <InfoRow
+          icon={ClipboardCheck}
+          label="Buổi còn lại"
+          value={
+            typeof e.remaining === "number" ? (
+              <span
+                className={cn(
+                  "font-semibold",
+                  e.remaining <= 0 ? "text-red-600" : "text-slate-900"
+                )}
+              >
+                {e.remaining} buổi
+              </span>
+            ) : undefined
           }
         />
         <InfoRow icon={AlignLeft} label="Ghi chú" value={e.note} />

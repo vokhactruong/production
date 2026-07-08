@@ -20,6 +20,7 @@ import {
   DoorOpen,
   Layers,
   ClipboardList,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
@@ -75,6 +76,12 @@ const MENU = [
     icon: ClipboardList,
     label: "Đăng ký học",
     permission: PERMISSIONS.ENROLLMENT_READ,
+  },
+  {
+    href: "/attendance",
+    icon: ClipboardCheck,
+    label: "Điểm danh",
+    permission: PERMISSIONS.ATTENDANCE_READ,
   },
   { href: "/roles", icon: Shield, label: "Vai trò", permission: PERMISSIONS.ROLE_READ },
   { href: "/permissions", icon: Key, label: "Quyền hạn", permission: PERMISSIONS.PERMISSION_READ },

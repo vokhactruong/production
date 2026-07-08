@@ -7,6 +7,7 @@ export const enrollmentKeys = {
     classId?: string;
     status?: string;
     page?: number;
+    limit?: number;
   }) => [...enrollmentKeys.lists(), filters] as const,
   details: () => [...enrollmentKeys.all, "detail"] as const,
   detail: (id: string) => [...enrollmentKeys.details(), id] as const,

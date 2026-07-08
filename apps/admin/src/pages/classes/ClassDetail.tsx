@@ -20,6 +20,7 @@ import {
   UserRound,
   CalendarDays,
   CalendarClock,
+  ClipboardCheck,
   Repeat,
   Plus,
   RefreshCw,
@@ -593,7 +594,16 @@ function SessionsTab({ classItem }: { classItem: Class }) {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-0.5">
+                          <Can permission={PERMISSIONS.ATTENDANCE_READ}>
+                            <button
+                              onClick={() => navigate(`/class-sessions/${s.id}/attendance`)}
+                              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                              aria-label={`Điểm danh buổi ${s.sessionNumber}`}
+                            >
+                              <ClipboardCheck className="h-4 w-4" />
+                            </button>
+                          </Can>
                           <Can permission={PERMISSIONS.CLASS_SESSION_UPDATE}>
                             <button
                               onClick={() => navigate(`/class-sessions/${s.id}/edit`)}
