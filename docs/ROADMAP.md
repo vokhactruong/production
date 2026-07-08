@@ -50,13 +50,13 @@ Features
 - Enrollment ✅
 - Class Schedule (Planning Layer) ✅
 - Class Session (Execution Layer, schedule-generated) ✅
-- Attendance
+- Attendance ✅
 - Tuition
 - Notifications
 
 Next
 
-Attendance → Payment
+Payment (Tuition)
 
 Success
 
@@ -87,6 +87,29 @@ Deferred to a future phase (additive only, no refactor expected):
 - Teacher/Classroom replacement per individual Session
 - Bulk reschedule, notifications, calendar sync (Google/Outlook/Apple)
 - QR / face / NFC attendance, offline sync, mobile teacher app
+
+---
+
+## Attendance v1 (2026-07-07)
+
+Attendance / Participation Management capability — evidence-based, derived
+balance. Attendance is recorded per (Enrollment × ClassSession) as
+participation evidence (bulk, idempotent `POST /attendance/sessions/:sessionId`),
+and completing a Session is blocked until every ACTIVE enrollment is marked
+(EXCUSED counts as finalized). Lesson consumption is derived, never stored:
+remaining = billingCycleSessions − COUNT(deducting attendance on COMPLETED
+sessions) — no counter columns, nothing runs at completion, corrections reverse
+by construction. Teachers hold their first operational grant
+(attendance.read/create/update); post-48h corrections require attendance.correct
+(Admin-tier). See DATABASE.md (Attendance) and API.md (Attendance API) for the
+full model.
+
+Next: Payment (Tuition).
+
+Known Constraint (recorded, deferred): how to calculate remaining lessons for
+students who enroll mid-cycle belongs to Payment (Slice #2). A COMPLETED
+session never accepts new attendance rows, so backfill cannot pre-empt that
+decision.
 
 ---
 

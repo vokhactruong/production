@@ -135,6 +135,41 @@ Per Attendance/Payment compatibility: `ClassSession` never stores student data (
 
 ---
 
+# Attendance: Participation Evidence (Enrollment × ClassSession)
+
+```
+Enrollment                                ClassSession
+  billingCycleSessions                      status (PLANNED/ONGOING/COMPLETED/CANCELLED)
+        |                                         |
+        | 1                                       | 1
+        |                                         |
+        N                                         N
+Attendance (Evidence Layer)               ← one live row per (Enrollment × ClassSession)
+  id
+  enrollmentId    ──── FK → enrollments.id
+  classSessionId  ──── FK → class_sessions.id
+  status          (AttendanceStatus: PRESENT | LATE | ABSENT | EXCUSED)
+  note?
+  markedById?     ──── FK → users.id (nullable, ON DELETE RESTRICT)
+  deletedAt / createdAt / updatedAt
+```
+
+Indexes: `enrollmentId`, `classSessionId`, `status`, `deletedAt`, plus the partial unique index below. All FKs are `ON DELETE RESTRICT`.
+
+Why uniqueness is a partial index in raw SQL
+
+"One Attendance record per (Enrollment × ClassSession)" is enforced by `attendances_active_enrollment_session_key`, a unique index on `(enrollmentId, classSessionId) WHERE "deletedAt" IS NULL` written in raw migration SQL (migration `20260709000000_add_attendance`, same convention as `enrollments_active_student_class_key`). A soft-deleted row's key can be reused; two live rows can never coexist. Prisma's DSL cannot express partial indexes, so the model has no `@@unique` — which means `prisma.attendance.upsert()` cannot target this key. Writers must use `findFirst({ deletedAt: null }) → create/update` and treat `P2002` as "a concurrent create won the race" (re-read + update). The index is the race-condition backstop; idempotent bulk recording relies on it, not on transactions.
+
+Derived Balance rule (no counter columns)
+
+remaining = `Enrollment.billingCycleSessions − COUNT(non-deleted Attendance rows with a deducting status whose ClassSession.status = COMPLETED)`
+
+Derived Balance is Source of Truth — the company-wide default architecture (Founder decision). No stored lesson counter exists anywhere: no column on Enrollment, no write at session completion. The session _being_ COMPLETED is what makes its deducting rows count, so corrections reverse by construction and CANCELLED sessions never consume. The deduction policy (`DEDUCTING_STATUSES`: PRESENT, LATE, ABSENT — EXCUSED does not deduct) is a single named value owned by `LessonConsumptionService`, and balances are always computed with one grouped COUNT per request — never a COUNT per row.
+
+What Attendance must never store
+
+Attendance is consequence-free evidence and never stores derivable data: no teacher, no classroom, no student columns. Student and class are reached through the `enrollment` relation; session facts through `classSession`. There is no delete path — corrections only, always audited.
+
 ---
 
 # Naming

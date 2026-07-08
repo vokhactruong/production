@@ -58,6 +58,7 @@ Responsibilities:
 
 - Read (list/detail), search, filter, pagination
 - Update only: date, status, topic, note — a manual business exception (holiday, teacher request, reschedule), never classId or sessionNumber
+- Status transition ONGOING → COMPLETED is additionally gated by the Session Completion Policy — see Attendance API (E1) below
 - Soft delete, only while status is PLANNED or CANCELLED
 
 There is no `POST /class-sessions`. Class Session is generated business data — see Scheduling API.
@@ -71,6 +72,22 @@ Responsibilities:
 - `generate-sessions`: create the full initial batch of Class Sessions from the Class's Class Schedule + startDate + sessionCount. Only when the Class is OPEN and has zero existing Sessions.
 - `sync-sessions`: idempotently append only missing future Sessions after a schedule change (e.g. a new weekly slot was added). Never overwrites existing Sessions, never recreates a soft-deleted Session, never backfills a past date. Only when the Class is OPEN.
 - Both return `{ generatedCount, existingCount, totalSessions }`.
+
+## Attendance API → Participation Evidence
+
+Endpoints: `/attendance`
+
+Responsibilities:
+
+- `POST /attendance/sessions/:sessionId` (`attendance.create`): idempotent bulk roster recording — body `{ records: [{ enrollmentId, status, note? }] }`, roster = ACTIVE enrollments of the session's class. Out-of-roster enrollments and inactive students are rejected. Writable-status matrix: PLANNED ❌ · ONGOING ✅ create + update · COMPLETED update existing rows only, never create (backfilling a past session would instantly consume a lesson; mid-cycle enrollment belongs to Payment) · CANCELLED ❌. Re-POSTing the same payload updates, never duplicates; unchanged rows produce no write and no audit entry. Returns the session's attendance rows.
+- `GET /attendance` (`attendance.read`): list with filters `classSessionId | classId | studentId | status`, pagination + sorting, `{ items, meta }` envelope. `classId`/`studentId` filter through the enrollment relation.
+- `PATCH /attendance/:id` (`attendance.update`): correction of status/note only. Within 48 hours of the session's end datetime (`date` + `endTime`), `attendance.update` suffices; after that the actor must also hold `attendance.correct` (403 otherwise). The same window applies to updates made through the bulk endpoint, so it cannot sidestep the correction rules. Correcting to a non-deducting status reverses consumption by construction (derived balance).
+
+There is no `DELETE /attendance`. Attendance is participation evidence — corrections only, never deletes; every write is audited with before/after metadata.
+
+Permissions: `attendance.read` / `attendance.create` / `attendance.update` → Super Admin, Admin, Teacher (first operational Teacher grant); `attendance.correct` (post-48h corrections) → Super Admin + Admin only.
+
+E1 — session completion gate: `PATCH /class-sessions/:id` with `status: COMPLETED` returns 400 until every ACTIVE enrollment of the session's class has a recorded attendance status for that session (EXCUSED counts as finalized; an empty roster is trivially completable). The gate is wired through the Business Policy Interface (`SessionCompletionPolicy` interface + `SESSION_COMPLETION_POLICY` injection token): the attendance module provides the policy, the Class Session module injects only the token and never imports attendance internals. No consumption code runs at completion — the balance is derived.
 
 ---
 
