@@ -16,6 +16,11 @@
       "dependsOn": ["^type-check"],
       "outputs": []
     },
+    "test": {
+      "cache": false,
+      "outputs": [],
+      "env": ["TEST_DATABASE_URL", "ALLOW_ANY_DB", "DATABASE_URL", "DIRECT_URL"]
+    },
     "clean": {
       "cache": false
     }

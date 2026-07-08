@@ -8,6 +8,7 @@
     "start": "pnpm --filter @school/database db:migrate:prod && node apps/api/dist/main.js",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
+    "test": "turbo run test",
     "clean": "turbo run clean",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "aos:start": "node scripts/aos-start.mjs",
