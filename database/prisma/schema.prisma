@@ -23,12 +23,13 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?
-  articles      Article[]
-  auditLogs     AuditLog[]
-  employee      Employee?
-  oauthAccounts OAuthAccount[]
-  refreshTokens RefreshToken[]
-  userRoles     UserRole[]
+  articles          Article[]
+  auditLogs         AuditLog[]
+  employee          Employee?
+  oauthAccounts     OAuthAccount[]
+  refreshTokens     RefreshToken[]
+  userRoles         UserRole[]
+  markedAttendances Attendance[]
 
   @@index([status])
   @@index([deletedAt])
@@ -472,6 +473,7 @@ model ClassSession {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   class         Class              @relation(fields: [classId], references: [id])
+  attendances   Attendance[]
 
   @@unique([classId, sessionNumber])
   @@index([classId])
@@ -507,10 +509,52 @@ model Enrollment {
   updatedAt            DateTime         @updatedAt
   student              Student          @relation(fields: [studentId], references: [id])
   class                Class            @relation(fields: [classId], references: [id])
+  attendances          Attendance[]
 
   @@index([studentId])
   @@index([classId])
   @@index([status])
   @@index([deletedAt])
   @@map("enrollments")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+/// Participation evidence: one row per (Enrollment × ClassSession). Attendance is a
+/// consequence-free record — it never stores derivable data (no teacher/classroom/student
+/// columns; those are reachable via the enrollment/classSession relations) and no balance
+/// counter exists anywhere: remaining lessons are always derived as
+/// billingCycleSessions − COUNT(deducting attendance on COMPLETED sessions)
+/// (see LessonConsumptionService).
+model Attendance {
+  id             String           @id @default(cuid())
+  /// Uniqueness of (enrollmentId, classSessionId) is enforced via a partial unique index
+  /// WHERE "deletedAt" IS NULL — see migration 20260709000000_add_attendance — so a
+  /// soft-deleted row's key can be reused while two live rows can never coexist. Not marked
+  /// @@unique: Prisma's schema DSL cannot express partial indexes, so all lookups must go
+  /// through findFirst/findMany with deletedAt: null, and writes use
+  /// findFirst → create/update with a P2002 catch (never prisma.upsert, which requires a
+  /// DSL-declared unique).
+  enrollmentId   String
+  classSessionId String
+  status         AttendanceStatus
+  note           String?
+  markedById     String?
+  deletedAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  enrollment     Enrollment       @relation(fields: [enrollmentId], references: [id])
+  classSession   ClassSession     @relation(fields: [classSessionId], references: [id])
+  markedBy       User?            @relation(fields: [markedById], references: [id], onDelete: Restrict)
+
+  @@index([enrollmentId])
+  @@index([classSessionId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("attendances")
 }
