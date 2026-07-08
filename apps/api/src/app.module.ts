@@ -23,6 +23,7 @@ import { EnrollmentsModule } from "./enrollments/enrollments.module";
 import { ClassSessionsModule } from "./class-sessions/class-sessions.module";
 import { ClassSchedulesModule } from "./class-schedules/class-schedules.module";
 import { SchedulingModule } from "./scheduling/scheduling.module";
+import { AttendanceModule } from "./attendance/attendance.module";
 
 @Module({
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
@@ -50,6 +51,7 @@ import { SchedulingModule } from "./scheduling/scheduling.module";
     ClassSessionsModule,
     ClassSchedulesModule,
     SchedulingModule,
+    AttendanceModule,
   ],
 })
 export class AppModule {}

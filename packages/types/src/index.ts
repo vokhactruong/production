@@ -306,6 +306,14 @@ export interface Enrollment {
   note?: string;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Derived-balance fields (Derived Balance is Source of Truth — no counter
+   * column exists anywhere). Computed by the API on list/detail reads only;
+   * absent on create/update responses. Display only — never recompute on the
+   * client.
+   */
+  consumed?: number;
+  remaining?: number;
   student?: { id: string; code?: string; firstName: string; lastName: string; status: string };
   class?: {
     id: string;
@@ -345,6 +353,43 @@ export interface ClassSession {
     employee?: { id: string; firstName: string; lastName: string };
     classroom?: { id: string; name: string };
   };
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+// Participation evidence per (Enrollment × ClassSession). Corrections only,
+// never deletes; lesson consumption is derived from this evidence (see the
+// Enrollment consumed/remaining fields) — the record itself stores no
+// teacher/classroom/student data.
+
+export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
+
+export interface Attendance {
+  id: string;
+  enrollmentId: string;
+  classSessionId: string;
+  status: AttendanceStatus;
+  note?: string | null;
+  markedById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  enrollment?: {
+    id: string;
+    studentId: string;
+    classId: string;
+    status: EnrollmentStatus;
+    billingCycleSessions: number;
+    student?: { id: string; code?: string; firstName: string; lastName: string; status: string };
+  };
+  classSession?: {
+    id: string;
+    classId: string;
+    sessionNumber: number;
+    status: ClassSessionStatus;
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
+  markedBy?: { id: string; firstName: string; lastName: string } | null;
 }
 
 // ─── Class Schedule (Planning Layer) ──────────────────────────────────────────

@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   ConflictException,
@@ -8,6 +9,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { ClassSessionsRepository } from "./class-sessions.repository";
+import { SESSION_COMPLETION_POLICY, SessionCompletionPolicy } from "./session-completion.policy";
 import { UpdateClassSessionDto, ClassSessionQueryDto } from "./dto/class-session.dto";
 
 type ClassSessionStatus = "PLANNED" | "ONGOING" | "COMPLETED" | "CANCELLED";
@@ -32,7 +34,12 @@ export class ClassSessionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly classSessionsRepository: ClassSessionsRepository,
-    private readonly auditLogs: AuditLogsService
+    private readonly auditLogs: AuditLogsService,
+    // Business Policy Interface (D1): completion knows only "a policy must
+    // pass" — it never names Attendance. The provider behind this token lives
+    // in whichever module owns the policy today.
+    @Inject(SESSION_COMPLETION_POLICY)
+    private readonly sessionCompletionPolicy: SessionCompletionPolicy
   ) {}
 
   private assertValidTimeRange(startTime: string, endTime: string) {
@@ -135,6 +142,15 @@ export class ClassSessionsService {
 
     if (dto.status !== undefined) {
       this.assertValidTransition(existing.status, dto.status);
+      // E1 gate: completing a session requires its attendance roster to be
+      // finalized (every ACTIVE enrollment marked; EXCUSED counts). Only the
+      // actual transition is gated — a no-op COMPLETED → COMPLETED PATCH is
+      // not re-checked. NO consumption code runs here: the derived balance
+      // means the session BEING COMPLETED is what makes its deducting
+      // attendance rows count.
+      if (dto.status === "COMPLETED" && existing.status !== "COMPLETED") {
+        await this.sessionCompletionPolicy.assertSessionCompletable(id);
+      }
     }
 
     // No $transaction here: single-entity update + its audit log (see

@@ -7,7 +7,8 @@ import {
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
-import { EnrollmentsRepository } from "./enrollments.repository";
+import { LessonConsumptionService } from "../attendance/lesson-consumption.service";
+import { EnrollmentsRepository, EnrollmentRecord } from "./enrollments.repository";
 import { CreateEnrollmentDto, UpdateEnrollmentDto, EnrollmentQueryDto } from "./dto/enrollment.dto";
 
 type EligibleClass = {
@@ -25,8 +26,25 @@ export class EnrollmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly enrollmentsRepository: EnrollmentsRepository,
-    private readonly auditLogs: AuditLogsService
+    private readonly auditLogs: AuditLogsService,
+    private readonly lessonConsumption: LessonConsumptionService
   ) {}
+
+  /**
+   * Additive derived-balance fields (consumed/remaining) on enrollment reads.
+   * Derived Balance is Source of Truth: no counter column exists anywhere —
+   * callers must batch ALL visible enrollmentIds into ONE grouped COUNT via
+   * LessonConsumptionService (never a COUNT per row).
+   */
+  private async withDerivedBalance(items: EnrollmentRecord[]) {
+    const consumedByEnrollment = await this.lessonConsumption.getConsumedByEnrollmentIds(
+      items.map((item) => item.id)
+    );
+    return items.map((item) => {
+      const consumed = consumedByEnrollment.get(item.id) ?? 0;
+      return { ...item, consumed, remaining: this.lessonConsumption.remainingFor(item, consumed) };
+    });
+  }
 
   private async assertActiveStudent(studentId: string, tx?: Prisma.TransactionClient) {
     const student = await (tx ?? this.prisma).student.findFirst({
@@ -133,7 +151,7 @@ export class EnrollmentsService {
     ]);
 
     return {
-      items,
+      items: await this.withDerivedBalance(items),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -141,7 +159,8 @@ export class EnrollmentsService {
   async findOne(id: string) {
     const enrollment = await this.enrollmentsRepository.findById(id);
     if (!enrollment) throw new NotFoundException("Đăng ký học không tồn tại");
-    return enrollment;
+    const [withBalance] = await this.withDerivedBalance([enrollment]);
+    return withBalance;
   }
 
   async create(dto: CreateEnrollmentDto, actorId?: string) {
