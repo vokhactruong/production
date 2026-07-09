@@ -1,27 +1,29 @@
 # Current Plan
 
-> **Runtime version: slice-02.v4** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v5** — valid only with matching `manifest.md`.
 > **Responsibility:** WHERE the work stands and what comes next.
 
-- **Plan source:** _(none — Implementation Plan is stage 4; Slice #2 is at Technical Analysis)_
+- **Plan source:** _(being produced this stage — `docs/slices/slice-02-payment/IMPLEMENTATION_PLAN.md`)_
 
 ## Progress
 
-- Done: Customer Journey → Founder decisions FINAL → REQUIREMENT (APPROVED FOR BA) →
-  BUSINESS_ANALYSIS (drafted by CLI, cross-reviewed APPROVE, **Founder signed GO 2026-07-09**).
-- In progress: **Technical Analysis — CLI DRAFT complete** (`TECHNICAL_ANALYSIS.md`): TA-W1 answered
-  from evidence (one Payment module + append-only money evidence + derived balances; Receipt =
-  permanent identifier; Refund = status transition), Receipt Number mechanics, credit branch, derived
-  money (revenue vs liability), 8 ⚑ decisions consolidated — none decided. **Pending Stage 3 cross-review.**
-- Not started: Implementation Plan (CLI drafts) → Execution Authorization (4b) → Implementation
-  (CLI end-to-end, A8) → Review → Testing → Reflection → Meeting #2 (full RFC-001 ratification
-  if evidence repeats).
+- Done: Journey → Requirement (APPROVED) → Business Analysis (GO) → **Technical Analysis
+  (APPROVED 10/10, Founder 2026-07-09)** — TA-W1 answered from evidence (first Rule-of-Three
+  confirmation of Reference-Slice reusability); 8 ⚑ + 4 OQ resolved; D17/D18 added; Stage-3
+  cross-review caught the T3-vs-Q3 conflict (gate #3 working as designed).
+- In progress: **Implementation Plan — CLI DRAFT complete** (`IMPLEMENTATION_PLAN.md`): approved
+  architecture sequenced into 8 phases / 26 tasks; 3 mandatory Founder sections (Capability Mapping,
+  Business Timeline, Known Constraints); BI-1…BI-10 mapped to invariant tests; DoD checklist;
+  only implementation-detail ⚑ P1–P6 left open. **Pending Stage 3 cross-review → Execution Authorization (4b).**
+- Not started: Execution Authorization (4b — Founder + Chief Architect sign; architecture freezes
+  into the Implementation Contract) → Implementation (CLI end-to-end, A8) → Review → Testing →
+  Reflection → Meeting #2 (full RFC-001 ratification — evidence now strongly favors it).
 
 ## Next step
 
-- CLI session: boot via AOS.md → verify manifest (slice-02.v4) → draft
-  `docs/slices/slice-02-payment/TECHNICAL_ANALYSIS.md` → commit + push (A7) → stop, hand to
-  Stage 3 (Desktop cross-review) → Founder approves the ⚑ decisions.
+- CLI session: boot via AOS.md → verify manifest (slice-02.v5) → draft
+  `docs/slices/slice-02-payment/IMPLEMENTATION_PLAN.md` → commit + push (A7) → stop →
+  Stage 3 cross-review → Founder Execution Authorization.
 
 ## Supervision gates (Stage 3 — every handoff)
 
