@@ -142,3 +142,61 @@ export class PaymentQueryDto {
   @Max(100)
   limit?: number = 10;
 }
+
+/** Withdraw from a cycle → unused paid value becomes student credit (D16). */
+export class WithdrawCreditDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  billingCycleId!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  note?: string;
+}
+
+/** Apply available student credit against a cycle's outstanding (offset, D16). */
+export class OffsetCreditDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  billingCycleId!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  note?: string;
+}
+
+export class RefundCreditDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  note?: string;
+}
+
+export class CreditQueryDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  studentId?: string;
+
+  @ApiPropertyOptional({ default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  page?: number = 1;
+
+  @ApiPropertyOptional({ default: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number = 10;
+}

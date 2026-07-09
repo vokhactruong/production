@@ -7,6 +7,7 @@ import { PaymentsRepository } from "./payments.repository";
 import { DerivedMoneyService } from "./derived-money.service";
 import { BillingService } from "./billing.service";
 import { PaymentRecordingService } from "./payment-recording.service";
+import { CreditService } from "./credit.service";
 
 @Module({
   // AttendanceModule provides LessonConsumptionService — pro-rata pricing (OQ-A)
@@ -14,7 +15,15 @@ import { PaymentRecordingService } from "./payment-recording.service";
   // consumption service itself is never modified by Payment (Q2 separation).
   imports: [AuthModule, AuditLogsModule, AttendanceModule],
   controllers: [PaymentsController],
-  providers: [PaymentsRepository, DerivedMoneyService, BillingService, PaymentRecordingService],
-  exports: [DerivedMoneyService, PaymentsRepository],
+  providers: [
+    PaymentsRepository,
+    DerivedMoneyService,
+    BillingService,
+    PaymentRecordingService,
+    CreditService,
+  ],
+  // BillingService is exported so the enrollment read path can call reconcile()
+  // (T2 lazy renewal + F2 self-heal); DerivedMoneyService for money reads.
+  exports: [DerivedMoneyService, BillingService, PaymentsRepository],
 })
 export class PaymentsModule {}

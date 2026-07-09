@@ -29,10 +29,14 @@
     guard), `PaymentRecordingService` (createMany PAYMENT+overpay-CREDIT_GRANT, receipt sequence,
     F2 inline activation), payment/receipt reads, controller, module, registered in app.module.
     Outstanding derived as Σ CHARGE − Σ(PAYMENT+CREDIT_OFFSET); F2 activates only fully-paid cycles.
-  - **Phase 3 (credit + renewal) — NEXT.** T9 CreditService (withdrawal grant + offset), T10 refund
-    (status transition), T11 T2 lazy renewal + read-path self-heal on enrollment reads.
-  - **Phase 4 seed (R1 roles + perms), Phase 5 all Business Invariant Tests green on school_portal_test.**
-    _(CLI: update this section after each phase.)_
+  - **Phase 3 (credit + renewal) — DONE (type-check + build ✓).** `CreditService`: withdrawal
+    (unused paid value → CREDIT_GRANT, cancels cycle), offset (CREDIT_OFFSET lowers owed+liability
+    equally, BI-10), refund (REFUND row then flip grant → REFUNDED; row-first ordering + balance
+    guard blocks double-refund). `BillingService.reconcile()` = T2 lazy renewal + F2 self-heal, hooked
+    into `EnrollmentsService.findOne` ONLY (detail read path, idempotent, DB-partial-uniques converge).
+    Credit endpoints wired; EnrollmentsModule imports PaymentsModule (no DI cycle).
+  - **Phase 4 seed (R1 roles + perms) — NEXT.** Phase 5 = all Business Invariant Tests green on school*portal_test.
+    *(CLI: update this section after each phase.)\_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →
   **Reflection Meeting #2** (full RFC-001 ratification; P3/P4 pattern candidates second-run

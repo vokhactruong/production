@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { LessonConsumptionService } from "../attendance/lesson-consumption.service";
+import { BillingService } from "../payments/billing.service";
 import { EnrollmentsRepository, EnrollmentRecord } from "./enrollments.repository";
 import { CreateEnrollmentDto, UpdateEnrollmentDto, EnrollmentQueryDto } from "./dto/enrollment.dto";
 
@@ -27,7 +28,8 @@ export class EnrollmentsService {
     private readonly prisma: PrismaService,
     private readonly enrollmentsRepository: EnrollmentsRepository,
     private readonly auditLogs: AuditLogsService,
-    private readonly lessonConsumption: LessonConsumptionService
+    private readonly lessonConsumption: LessonConsumptionService,
+    private readonly billing: BillingService
   ) {}
 
   /**
@@ -159,6 +161,10 @@ export class EnrollmentsService {
   async findOne(id: string) {
     const enrollment = await this.enrollmentsRepository.findById(id);
     if (!enrollment) throw new NotFoundException("Đăng ký học không tồn tại");
+    // T2 lazy renewal + F2 self-heal ("Evidence heals state") — the single
+    // explicit read path that materializes/activates billing cycles from
+    // evidence. Confined here (detail read only), never on list reads.
+    await this.billing.reconcile(id);
     const [withBalance] = await this.withDerivedBalance([enrollment]);
     return withBalance;
   }

@@ -118,6 +118,87 @@ export class BillingService {
     return { ...cycle, outstanding };
   }
 
+  /**
+   * T2 lazy renewal + F2 self-heal — the ONE explicit code path where the
+   * enrollment read side-effects billing state ("Evidence heals state"). Fully
+   * idempotent: safe to call on every enrollment detail read; DB partial-uniques
+   * (one ACTIVE, one PENDING) make concurrent readers converge, never duplicate.
+   * Called by EnrollmentsService.findOne only — never from list reads.
+   */
+  async reconcile(enrollmentId: string): Promise<void> {
+    const cycles = await this.repo.findLiveCyclesForEnrollment(enrollmentId);
+    if (cycles.length === 0) return;
+    const remaining = await this.derivedMoney.getCycleRemainingMap(enrollmentId);
+
+    // 1. Complete a fully-consumed ACTIVE cycle.
+    for (const c of cycles) {
+      if (c.status === "ACTIVE" && (remaining.get(c.id) ?? c.sessionsSold) <= 0) {
+        await this.repo.updateCycleStatus(c.id, "COMPLETED");
+        c.status = "COMPLETED";
+      }
+    }
+
+    // 2. Self-heal a fully-paid PENDING cycle → ACTIVE (only if none ACTIVE, D13).
+    if (!cycles.some((c) => c.status === "ACTIVE")) {
+      for (const c of cycles) {
+        if (c.status === "PENDING" && (await this.derivedMoney.isCycleFullyPaid(c.id))) {
+          try {
+            await this.repo.updateCycleStatus(c.id, "ACTIVE");
+            c.status = "ACTIVE";
+            break;
+          } catch (err) {
+            if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002"))
+              throw err;
+          }
+        }
+      }
+    }
+
+    // 3. Renewal: all cycles terminal AND sold capacity fully consumed AND the
+    //    enrollment still ACTIVE → materialize the next PENDING cycle (Q3/BI-4).
+    if (cycles.some((c) => c.status === "PENDING" || c.status === "ACTIVE")) return;
+
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: { id: enrollmentId, deletedAt: null },
+      select: {
+        id: true,
+        status: true,
+        studentId: true,
+        class: { select: { course: { select: { basePrice: true, packageLessons: true } } } },
+      },
+    });
+    if (!enrollment || enrollment.status !== "ACTIVE") return;
+
+    const totalCap = cycles.reduce((s, c) => s + c.sessionsSold, 0);
+    const consumedMap = await this.lessonConsumption.getConsumedByEnrollmentIds([enrollmentId]);
+    if ((consumedMap.get(enrollmentId) ?? 0) < totalCap) return; // capacity not exhausted
+
+    const basePrice = enrollment.class.course.basePrice.toNumber();
+    const packageLessons = enrollment.class.course.packageLessons;
+    try {
+      const created = await this.repo.createCycle({
+        enrollment: { connect: { id: enrollmentId } },
+        status: "PENDING",
+        snapshotPrice: basePrice,
+        snapshotDiscount: null,
+        sessionsSold: packageLessons,
+        note: "Gia hạn tự động",
+      });
+      await this.repo.createLedgerEntries([
+        {
+          type: "CHARGE",
+          amount: basePrice,
+          studentId: enrollment.studentId,
+          billingCycleId: created.id,
+          note: "Gia hạn tự động (ghi nợ)",
+        },
+      ]);
+    } catch (err) {
+      // one-PENDING partial-unique: another concurrent read already renewed.
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+    }
+  }
+
   async findAll(query: BillingCycleQueryDto) {
     const { enrollmentId, studentId, status, sortOrder = "desc", page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;

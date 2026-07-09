@@ -80,6 +80,16 @@ export class DerivedMoneyService {
     return !!t && t.charge > 0 && t.outstanding <= 0;
   }
 
+  /** Σ PAYMENT for one cycle — the cash actually paid in (used to compute the
+   * unused value refunded as credit on withdrawal). Excludes CREDIT_OFFSET. */
+  async getPaidByCycleId(cycleId: string): Promise<number> {
+    const r = await this.prisma.ledgerEntry.aggregate({
+      where: { billingCycleId: cycleId, type: "PAYMENT", deletedAt: null },
+      _sum: { amount: true },
+    });
+    return this.num(r._sum.amount);
+  }
+
   /** Total settled revenue — Σ PAYMENT only, credit excluded (BI-10). */
   async getRevenue(range?: { from?: Date; to?: Date }): Promise<number> {
     const r = await this.prisma.ledgerEntry.aggregate({
