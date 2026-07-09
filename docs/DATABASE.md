@@ -226,7 +226,7 @@ dateOfBirth
 
 guardianPhone
 
-remainingLessons
+billingCycleSessions
 
 createdAt
 
@@ -428,11 +428,14 @@ status
 
 joinedAt
 
-remainingLessons
+billingCycleSessions
 
 discount
 
 notes
+
+_(Note: `remainingLessons` was removed from these examples by Reflection Meeting decision,
+2026-07-08 — remaining lessons are DERIVED (Derived Balance rule), never stored as a column.)_
 
 ---
 
@@ -562,21 +565,23 @@ Never rely only on application validation.
 
 Use Prisma transactions when
 
-Creating multiple related records
+Creating multiple related records that must succeed or fail together
 
-Updating multiple business entities
-
-Financial operations
-
-Enrollment
-
-Attendance
-
-Tuition Payment
-
-Invoice
+Financial operations that mutate multiple rows
 
 Never use transactions for simple CRUD.
+
+**Pooled-connection constraint (production evidence, 2026):** Prisma interactive transactions
+are unreliable over pgbouncer transaction-pooling (`Transaction not found` incident on
+ClassesService). Prefer designs that do not need multi-row atomicity: database constraints +
+idempotent single-row writes + derived reads. The Attendance/completion path is deliberately
+transaction-free (see "Attendance: Participation Evidence" above and RFC-001). When true
+multi-row atomicity is unavoidable, escalate the design to the Architect — do not default to
+`$transaction`.
+
+_(Corrected by Reflection Meeting decision, 2026-07-08 — this section previously mandated
+transactions for Enrollment/Attendance/Payment, contradicting both the "never for simple CRUD"
+rule below it and the implemented, approved architecture.)_
 
 ---
 

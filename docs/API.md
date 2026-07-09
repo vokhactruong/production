@@ -222,20 +222,26 @@ Query
 
 &limit=20
 
-Response
+Response (the actual, implemented envelope — `TransformInterceptor` wraps every success response;
+list services return `{ items, meta }`)
 
 {
 "success": true,
 "data": {
 "items": [],
-"pagination": {
+"meta": {
+"total": 156,
 "page": 1,
 "limit": 20,
-"total": 156,
 "totalPages": 8
 }
+},
+"timestamp": "ISO-8601"
 }
-}
+
+_(Corrected by Reflection Meeting decision, 2026-07-08 — this section previously documented a
+`data.pagination` shape that no implemented module uses; every list module (students →
+attendance) returns `{ items, meta }`.)_
 
 Never return thousands of records.
 
