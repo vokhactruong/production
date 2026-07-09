@@ -1,7 +1,8 @@
 # Business Analysis — Product Slice #2: Payment (Tuition)
 
-> **Status: DRAFT — recommendation GO. Prepared by Delivery Manager (Claude CLI, Stage 2 per
-> RFC-001 A2), 2026-07-09. Awaiting Stage 3 cross-review (Desktop) → Founder go/no-go.**
+> **Status: APPROVED — GO (Founder, 2026-07-09). Proceed to Technical Analysis.**
+> Prepared by Delivery Manager (Claude CLI, Stage 2 per RFC-001 A2); cross-reviewed by
+> AI Co-Architect (Stage 3, APPROVE); signed by the Founder.
 > Per `playbook/templates/business-analysis-template.md`, extended with the ratified slice
 > sections (format benchmark: slice-01 BUSINESS_ANALYSIS.md). Business language only — no schema,
 > no architecture, no code. All Founder decisions (Q1–Q12, D13–D16) are FINAL and are treated
@@ -124,8 +125,8 @@ roadmap stalls at its single highest-value step.
 
 ## Decision
 
-- **Outcome:** ☑ Build (recommended) ☐ Defer ☐ Drop
-- **Approved by:** _pending — Stage 3 cross-review (Desktop) → Founder go/no-go_
+- **Outcome:** ☑ Build ☐ Defer ☐ Drop
+- **Approved by:** Founder, 2026-07-09 (Stage 3 cross-review: APPROVE)
 - **Rationale (analyst recommendation):** Payment is the revenue-collection half of the product's
   core value proposition and its highest-priority problem. The business decisions are already
   FINAL and mutually coherent, the money-safety invariants are specified and testable, and scope
@@ -145,3 +146,38 @@ roadmap stalls at its single highest-value step.
      flag before any parent-facing exposure.
   4. **Organization Policy configuration** stays out of scope (inherited constraint); the
      study-in-debt default (D15) must ship conservative and must not be hardcoded deeper.
+
+---
+
+## Cross-review — AI Co-Architect (Stage 3, 2026-07-09)
+
+**Verdict: APPROVE — recommend Founder signs GO.** Checked: template compliance (matches the
+Reference Slice benchmark), zero re-opened decisions, business-language-only discipline held,
+rules→invariants mapping accurate for all of BI-1…BI-10, risks proportionate, watch-items
+legitimate. A7 housekeeping verified: 6 grouped commits pushed (5f5e8e1…c718fc5).
+
+**Two additive comments for Technical Analysis (not blocking, recorded here so CLI inherits them):**
+
+1. **Receipt identifiers need the sessionNumber-style permanence rule.** The Reference Slice
+   established that permanent business identifiers are never reused even across soft-deletes
+   (`sessionNumber`). Receipts are the money-side analogue — parents, audits, and future Parent
+   Portal will cite receipt numbers forever. TA should treat receipt numbering as a permanent
+   identifier from day one, not a sequence.
+2. **Overpayment→credit must live inside the same <1-minute flow.** D16 makes overpayment a
+   credit source; if that requires a second screen or separate action, the KPI dies at the
+   counter. TA/UX should design change-handling as one step of payment recording.
+
+**Process note:** analysis drafted by CLI (Stage 2), reviewed by Desktop (Stage 3) — cross-review
+rule held; neither runtime reviewed its own work. Go/no-go signature remains the Founder's.
+
+## Founder sign-off additions (2026-07-09 — binding on Technical Analysis)
+
+- **Receipt Number rule (approved as principle):** Immutable · Globally Unique · Never Reused —
+  the money-side analogue of `sessionNumber`.
+- **Credit flow (approved):** credit/change handling is a **branch inside the Payment flow**,
+  never a separate module or screen — the <1-minute KPI is a Business KPI, not UX preference.
+- **TA-W1 (mandated architecture question):** should Payment → Receipt → Credit → Refund be one
+  aggregate or several? **Answer from evidence** (Reference Slice architecture + the approved
+  Business Rules), not from DDD theory. This is the first test of whether the Reference Slice
+  produced genuinely reusable architecture.
+- Watch-items 1–4 carried into TA unchanged.
