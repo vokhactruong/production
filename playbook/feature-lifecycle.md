@@ -12,6 +12,8 @@ Technical Analysis
    ↓
 Implementation Plan
    ↓
+Execution Authorization
+   ↓
 Implementation
    ↓
 Review
@@ -28,18 +30,19 @@ Done
 Each stage has one input, one artifact, and a clear exit condition. You may not enter a
 stage until the previous stage's exit condition is met.
 
-| #   | Stage                   | Owner                                         | Use                                                                         | Exit condition                                                                          |
-| --- | ----------------------- | --------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 1   | **Requirement**         | Requester + Engineer                          | `templates/requirement-template.md`                                         | The WHAT and WHY are stated in business terms, with a definition of done.               |
-| 2   | **Business Analysis**   | Founder / Business owner (Engineer drafts)    | `templates/business-analysis-template.md`                                   | The feature passes the value test and is approved to proceed, or is dropped.            |
-| 3   | **Technical Analysis**  | Architect (Engineer drafts)                   | `templates/technical-analysis-template.md`                                  | The technical approach reuses existing patterns; any architecture decision is approved. |
-| 4   | **Implementation Plan** | Engineer                                      | `templates/implementation-plan-template.md`                                 | Tasks, sequence, and Definition of Done are agreed.                                     |
-| 5   | **Implementation**      | Engineer (AI as Lead Implementation Engineer) | `guides/implementation-guide.md` + `checklists/implementation-checklist.md` | Code follows the plan and conventions; implementation checklist passes.                 |
-| 6   | **Review**              | Reviewer / Architect                          | `guides/review-guide.md` + `checklists/review-checklist.md`                 | Work meets business, architecture, and quality bars; review checklist passes.           |
-| 7   | **Testing**             | Engineer / Reviewer                           | `guides/testing-guide.md` + `checklists/testing-checklist.md`               | Behaviour is verified; quality gates pass; existing functionality intact.               |
-| 8   | **Reflection**          | Engineer                                      | `guides/reflection-guide.md`                                                | The one Reflection question (below) has been answered.                                  |
-| 9   | **Lessons Learned**     | Engineer                                      | `templates/lesson-template.md`                                              | A Lesson is recorded (even if "nothing to change").                                     |
-| 10  | **Done**                | Owner (Founder/Architect for release)         | —                                                                           | Feature meets its Definition of Done and is released per project process.               |
+| #   | Stage                       | Owner                                         | Use                                                                         | Exit condition                                                                                                                                                                                    |
+| --- | --------------------------- | --------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Requirement**             | Requester + Engineer                          | `templates/requirement-template.md`                                         | The WHAT and WHY are stated in business terms, with a definition of done.                                                                                                                         |
+| 2   | **Business Analysis**       | Founder / Business owner (Engineer drafts)    | `templates/business-analysis-template.md`                                   | The feature passes the value test and is approved to proceed, or is dropped.                                                                                                                      |
+| 3   | **Technical Analysis**      | Architect (Engineer drafts)                   | `templates/technical-analysis-template.md`                                  | The technical approach reuses existing patterns; any architecture decision is approved.                                                                                                           |
+| 4   | **Implementation Plan**     | Engineer                                      | `templates/implementation-plan-template.md`                                 | Tasks, sequence, and Definition of Done are agreed.                                                                                                                                               |
+| 4b  | **Execution Authorization** | Founder + Chief Architect                     | — (signature recorded in the plan artifact)                                 | All flagged decisions resolved and FROZEN as the Implementation Contract; scope locked; runtime authorized. _(Added by Reflection Meeting decision 2026-07-08 — RFC-001 P2; evidence: Slice #1.)_ |
+| 5   | **Implementation**          | Engineer (AI as Lead Implementation Engineer) | `guides/implementation-guide.md` + `checklists/implementation-checklist.md` | Code follows the plan and conventions; implementation checklist passes.                                                                                                                           |
+| 6   | **Review**                  | Reviewer / Architect                          | `guides/review-guide.md` + `checklists/review-checklist.md`                 | Work meets business, architecture, and quality bars; review checklist passes.                                                                                                                     |
+| 7   | **Testing**                 | Engineer / Reviewer                           | `guides/testing-guide.md` + `checklists/testing-checklist.md`               | Behaviour is verified; quality gates pass; existing functionality intact.                                                                                                                         |
+| 8   | **Reflection**              | Engineer                                      | `guides/reflection-guide.md`                                                | The one Reflection question (below) has been answered.                                                                                                                                            |
+| 9   | **Lessons Learned**         | Engineer                                      | `templates/lesson-template.md`                                              | A Lesson is recorded (even if "nothing to change").                                                                                                                                               |
+| 10  | **Done**                    | Owner (Founder/Architect for release)         | —                                                                           | Feature meets its Definition of Done and is released per project process.                                                                                                                         |
 
 ---
 

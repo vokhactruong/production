@@ -1,8 +1,9 @@
 # RFC-001 — AI Company Operating Architecture (v1)
 
-> **Status: DRAFT — operating configuration in effect by Founder decision (2026-07-07);
-> formal ratification at the Slice #1 Reflection Meeting, re-confirmed after Slice #2
-> ("No abstraction without repeated evidence" — n=1 today).**
+> **Category: Organization RFC**
+> **Status: OPERATIONAL RFC · Ratification: PROVISIONAL** — Reflection Meeting, 2026-07-08
+> (Founder + Chief Architect). In real operation since 2026-07-07; full ratification after
+> Slice #2 re-confirms ("No abstraction without repeated evidence" — evidence is n=1).
 > Supersedes the tool-to-role mapping assumptions in ORGANIZATION_STRUCTURE.md §5 once ratified.
 > Drafted by: AI Co-Architect, from Founder decisions. Decides nothing not already decided.
 
@@ -71,6 +72,38 @@ always under Stage-3 supervision, never the responsible owner of Implementation.
   are still settling, and a generator without version discipline would still emit stale state;
   the version check is the actual staleness fix. Amending `.aos/boot.md` to formalize the boot
   check goes through RFC ratification at the Reflection Meeting (boot loader is frozen).
+
+## Reflection Meeting outcomes (2026-07-08) — additional provisions
+
+- **A6 — Company Principle (effective immediately):** _"No abstraction without repeated
+  evidence."_ Elevated from pattern to principle — Slice #1 applied it successfully four times
+  (deferred: event-driven Model B, runtime generator, premature framework work; provisional: this
+  RFC itself).
+- **A7 — Company Policy (effective immediately, operational safety — exempt from Rule of
+  Three):** _"Commit is not backup."_ Every execution run order ends with push-to-origin.
+  Evidence: the 2026-07-07 file-corruption incident was survivable only because work was
+  committed; it would have been trivial with an offsite push.
+- **A8 — Slice Ownership rule (P8):** _One Capability → One Owner → One Runtime_ — for
+  **Implementation**. Slice #1's split implementation (workers Phases 1–7, CLI Phase 8) created
+  the verify-at-write gap; from Slice #2 the Delivery Manager (CLI) owns implementation
+  end-to-end. Boundary: design and review stages remain deliberately multi-runtime — that is the
+  four-stage architecture, not a violation of P8.
+- **A9 — Evidence layer in the learning chain:** Review → **Evidence** → Lesson → Pattern
+  Candidate → RFC. A Lesson is an _interpretation of_ evidence, not evidence itself; artifacts
+  must cite the evidence they interpret.
+- **Execution Authorization** is a formal lifecycle stage (P2, approved) — recorded in
+  `playbook/feature-lifecycle.md` per this meeting's authority.
+- **Pattern Candidates awaiting Slice #2 (Rule of Three):** Customer Journey before Requirement
+  (P3), Capability Model (P4), Boot Contract in `.aos/boot.md` (P6 — active draft, boot untouched
+  until Slice #2).
+- **A10 — Reference Slice & Knowledge Gain KPI (Founder, post-meeting).** Attendance is the
+  company's **Reference Slice** — the benchmark every future slice is compared against. Every
+  slice is scored on two axes at its Reflection Meeting: _Shipped through AOS_ (yes/no) and
+  **Knowledge Gain** = the number of organization-level mechanisms the slice produced that were
+  **adopted with evidence** (ideas don't count; adopted mechanisms do). Attendance: Knowledge
+  Gain = 4 (Derived Runtime discipline, Runtime Contract, RFC-001, Execution Authorization).
+  The company's central loop this measures: Customer → Journey → Capability → Product Slice →
+  Implementation → Evidence → Lesson → Pattern Candidate → RFC → Operating System.
 
 ## Non-goals
 
