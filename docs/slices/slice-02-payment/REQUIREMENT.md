@@ -122,6 +122,12 @@ dashboard and sees revenue and outstanding debt that are true right now.
   `CHARGE = Σ PAYMENT + Σ CREDIT_OFFSET + outstanding`; per student,
   `Σ CREDIT_GRANT = Σ CREDIT_OFFSET + Σ REFUND + credit balance`. Value never disappears and is
   never created from nothing.
+- **BI-12 (Founder, 2026-07-09 — Checkpoint #1):** **No orphan billing cycles.** Every PENDING
+  cycle satisfies exactly one of: `Σ CHARGE > 0`, or it is **self-healable** — operationally
+  defined as: the next business action touching it (the sale path) completes its missing evidence
+  idempotently; no state may require out-of-band intervention. Healing happens **only inside the
+  business flow** — never a background job, cron, admin tool, startup hook, or health check.
+  Chargeless is not invalid; orphaned-forever is.
 
 ## Slice Success Metrics (Product KPIs)
 

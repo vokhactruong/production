@@ -1,6 +1,6 @@
 # Active Decisions
 
-> **Runtime version: slice-02.v6** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v7** — valid only with matching `manifest.md`.
 > **Responsibility:** WHAT is already decided and binding.
 
 ## ❄️ THE FROZEN IMPLEMENTATION CONTRACT (Execution Authorization, 2026-07-09)
@@ -38,6 +38,22 @@ RFC-001 (Operational · Provisional); A6–A10; A7 push rule; A8 CLI end-to-end;
 - **Local-DB verification (Founder-approved):** apply via `prisma migrate deploy` + shell-env override
   to local `school_portal_dev` / `school_portal_test`; never `migrate dev`, never the Supabase `.env` URL.
 
+## Checkpoint #1 rulings (Founder, 2026-07-09)
+
+- **R1 = BLOCKER before leaving Phase 5:** sale path P2002-PENDING conflict → if existing cycle
+  is chargeless, complete its missing CHARGE idempotently from the cycle's frozen snapshot
+  (Evidence heals state); real conflict (charge > 0) → throw. IT must prove idempotency under
+  repeated retries (retry × N ⇒ exactly one CHARGE, one cycle).
+- **BI-12 (new, REQUIREMENT.md):** no orphan cycles; self-healable = healed by the next business
+  action; healing ONLY inside the business flow — never cron/job/admin-tool/startup/health-check.
+- Seams #2 (refund ordering) + #3 (renewal in findOne only): approved as implemented.
+- ⟡ Evidence-heals-state: 3rd occurrence recorded; ratification still waits for a non-School-Portal
+  context (CRM/Booking/HRM) — Founder's stricter Rule-of-Three reading.
+
 ## Open escalations (blocking)
 
-- _(none — implementation is unblocked)_
+- _(none)_ — **R1 RESOLVED (2026-07-09):** sale-path chargeless-PENDING self-heal from the cycle's
+  frozen snapshot (real conflict when charge>0 throws); new migration
+  `20260711000000_one_charge_per_cycle` (DB partial-unique = idempotent healing under concurrency);
+  reconcile heals renewal orphans in-flow (BI-12). IT-14 proves retry×N (sequential + concurrent)
+  ⇒ exactly one cycle + one CHARGE. Full suite 38/38 green. Phase 6 unblocked.

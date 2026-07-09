@@ -1,6 +1,6 @@
 # Current Plan
 
-> **Runtime version: slice-02.v6** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v7** — valid only with matching `manifest.md`.
 > **Responsibility:** WHERE the work stands and what comes next.
 
 - **Plan source:** `docs/slices/slice-02-payment/IMPLEMENTATION_PLAN.md` (**EXECUTION AUTHORIZED — Implementation Contract FROZEN**, Founder + Chief Architect, 2026-07-09)
@@ -44,9 +44,16 @@
     BI-2/3/8 (IT-8), BI-4/9 (IT-9), BI-7/10 (IT-10), BI-5/6 (IT-11), ⚑5 atomicity (IT-12), BI-11
     conservation (IT-13). **Full suite 34/34 green on school_portal_test** (6 Slice-#1 regressions
     intact + 7 new). lint(src)+type-check ✓.
-  - **⛳ STAGE-3 CHECKPOINT #1 (end of Phase 5, before frontend) — awaiting cross-review.** Money core
-    (backend + migration + seed + invariant tests) complete + verified. Phases 6–8 (admin frontend,
-    docs, final gates) pending; Stage-3 checkpoint #2 at end of Phase 8.
+  - **⛳ STAGE-3 CHECKPOINT #1 — RATIFIED (Founder, 2026-07-09).** Seams #2/#3 approved.
+  - **R1 BLOCKER — DONE + IT GREEN (BI-12).** Sale path P2002→PENDING now heals a _chargeless_ orphan
+    from its own frozen snapshot (real conflict when charge>0 → throw); new migration
+    `20260711000000_one_charge_per_cycle` (DB partial-unique) makes healing idempotent under
+    concurrency; `reconcile` heals renewal orphans in-flow only (never job/cron/startup). `ensureCharge`
+    helper. **IT-14 (4 cases: sequential retry×5, concurrent×6, real-conflict, renewal-orphan heal) —
+    full suite 38/38 green on school_portal_test.** (Also: corrected the manifest's stale file-table
+    v6→v7 and REQUIREMENT status → BI-1…BI-12.)
+  - **Phase 6 (admin frontend) — NEXT** (unblocked). Then Phase 7 docs, Phase 8 gates + Reflection;
+    Stage-3 checkpoint #2 at end of Phase 8.
     _(CLI: update this section after each phase.)_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →

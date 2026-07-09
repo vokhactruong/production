@@ -1,0 +1,11 @@
+-- CreateIndex
+-- BI-12 (no orphan cycles) + idempotent self-healing. At most ONE live CHARGE
+-- may exist per billing cycle. A sale that crashed after creating the PENDING
+-- cycle but before writing its CHARGE leaves a *chargeless* cycle; the next sale
+-- for that enrollment hits the one-PENDING guard, detects the chargeless cycle,
+-- and completes its missing CHARGE from the cycle's own frozen snapshot price
+-- ("Evidence heals state"). This partial-unique makes that completion idempotent
+-- even under concurrency/retry: a duplicate CHARGE insert raises P2002 and is
+-- treated as a no-op, so retry × N still yields exactly one CHARGE per cycle.
+-- (Prisma's DSL cannot express partial indexes — raw SQL, like the F1 indexes.)
+CREATE UNIQUE INDEX "ledger_one_charge_per_cycle" ON "ledger_entries"("billingCycleId") WHERE "type" = 'CHARGE' AND "deletedAt" IS NULL;

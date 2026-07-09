@@ -638,7 +638,10 @@ model BillingCycle {
 /// (never reused, gaps acceptable), and the row's own `studentId` +
 /// `billingCycleId` ARE the receipt's Time-frozen references to Student +
 /// BillingCycle (D17) — direct and frozen on this immutable row, so no duplicate
-/// reference columns are stored.
+/// reference columns are stored. BI-12: a raw-SQL partial-unique
+/// (ledger_one_charge_per_cycle, migration 20260711000000_one_charge_per_cycle)
+/// enforces at most one live CHARGE per cycle, making a chargeless-cycle heal on
+/// the sale path idempotent under retry.
 model LedgerEntry {
   id             String              @id @default(cuid())
   type           LedgerEntryType

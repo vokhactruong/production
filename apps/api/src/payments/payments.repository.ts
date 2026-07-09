@@ -97,6 +97,18 @@ export class PaymentsRepository {
     await this.prisma.billingCycle.update({ where: { id }, data: { status } });
   }
 
+  /** The enrollment's live PENDING cycle (at most one — F1 one-PENDING index),
+   * with its frozen snapshot — used to heal a chargeless orphan on the sale path
+   * (BI-12). */
+  async findPendingCycleForEnrollment(
+    enrollmentId: string
+  ): Promise<{ id: string; snapshotPrice: Prisma.Decimal } | null> {
+    return this.prisma.billingCycle.findFirst({
+      where: { enrollmentId, status: "PENDING", deletedAt: null },
+      select: { id: true, snapshotPrice: true },
+    });
+  }
+
   /** Live (non-deleted), non-CANCELLED cycles for an enrollment, oldest first —
    * the ordering capacity-based FIFO attribution walks (P4). */
   async findLiveCyclesForEnrollment(

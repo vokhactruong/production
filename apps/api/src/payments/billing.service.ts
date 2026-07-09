@@ -70,6 +70,7 @@ export class BillingService {
     }
 
     let cycleId: string;
+    let chargeAmount: number;
     try {
       const created = await this.repo.createCycle({
         enrollment: { connect: { id: enrollment.id } },
@@ -80,25 +81,28 @@ export class BillingService {
         note: dto.note,
       });
       cycleId = created.id;
+      chargeAmount = snapshotPrice;
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        throw new ConflictException(PENDING_CONFLICT);
-      }
-      throw err;
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+      // One PENDING cycle already exists for this enrollment (F1 one-PENDING).
+      // BI-12: if it is a *chargeless* orphan — a prior sale that crashed after
+      // creating the cycle but before its CHARGE — heal it by completing the
+      // CHARGE from its OWN frozen snapshot ("Evidence heals state"). If it
+      // already carries a charge, this is a genuine "already has a pending cycle"
+      // conflict.
+      const existing = await this.repo.findPendingCycleForEnrollment(enrollment.id);
+      if (!existing) throw new ConflictException(PENDING_CONFLICT);
+      const charge =
+        (await this.derivedMoney.getCycleTotals([existing.id])).get(existing.id)?.charge ?? 0;
+      if (charge > 0) throw new ConflictException(PENDING_CONFLICT);
+      cycleId = existing.id;
+      chargeAmount = existing.snapshotPrice.toNumber();
     }
 
-    // The CHARGE ledger row IS the debt (unified ledger, BI-1). Amount equals the
-    // frozen snapshot price so the per-cycle ledger balances (BI-11).
-    await this.repo.createLedgerEntries([
-      {
-        type: "CHARGE",
-        amount: snapshotPrice,
-        studentId: enrollment.studentId,
-        billingCycleId: cycleId,
-        createdById: actorId,
-        note: "Bán gói (ghi nợ)",
-      },
-    ]);
+    // The CHARGE ledger row IS the debt (unified ledger, BI-1). Idempotent: the
+    // one-charge-per-cycle partial-unique makes a retry/concurrent duplicate a
+    // P2002 no-op, so retry × N yields exactly one CHARGE (BI-12).
+    await this.ensureCharge(cycleId, enrollment.studentId, chargeAmount, actorId);
 
     await this.auditLogs.log({
       userId: actorId,
@@ -109,6 +113,36 @@ export class BillingService {
     });
 
     return this.findOne(cycleId);
+  }
+
+  /**
+   * Idempotently ensure a cycle carries its single CHARGE row. The
+   * one-charge-per-cycle partial-unique makes a duplicate insert raise P2002,
+   * which is swallowed as a no-op — so completing a chargeless orphan is safe
+   * under retry and concurrency (BI-12). `amount` is always the cycle's own
+   * frozen snapshot, never a freshly computed price.
+   */
+  private async ensureCharge(
+    cycleId: string,
+    studentId: string,
+    amount: number,
+    actorId?: string
+  ): Promise<void> {
+    try {
+      await this.repo.createLedgerEntries([
+        {
+          type: "CHARGE",
+          amount,
+          studentId,
+          billingCycleId: cycleId,
+          createdById: actorId,
+          note: "Bán gói (ghi nợ)",
+        },
+      ]);
+    } catch (err) {
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+      // CHARGE already present → idempotent no-op.
+    }
   }
 
   async findOne(id: string) {
@@ -128,6 +162,25 @@ export class BillingService {
   async reconcile(enrollmentId: string): Promise<void> {
     const cycles = await this.repo.findLiveCyclesForEnrollment(enrollmentId);
     if (cycles.length === 0) return;
+
+    // BI-12: heal any chargeless PENDING orphan (e.g. a renewal that crashed
+    // before writing its CHARGE) from its own frozen snapshot. This is a
+    // business-flow read (never a job/cron/health-check) and is idempotent —
+    // "chargeless is not invalid; orphaned-forever is".
+    const totals = await this.derivedMoney.getCycleTotals(cycles.map((c) => c.id));
+    for (const c of cycles) {
+      if (c.status === "PENDING" && (totals.get(c.id)?.charge ?? 0) === 0) {
+        const full = await this.repo.findCycleById(c.id);
+        if (full) {
+          await this.ensureCharge(
+            full.id,
+            full.enrollment.studentId,
+            full.snapshotPrice.toNumber()
+          );
+        }
+      }
+    }
+
     const remaining = await this.derivedMoney.getCycleRemainingMap(enrollmentId);
 
     // 1. Complete a fully-consumed ACTIVE cycle.

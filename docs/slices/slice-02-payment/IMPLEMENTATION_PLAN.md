@@ -528,3 +528,25 @@ Phase 5, blocking T25/T26 like every other IT.
 **⟡ Pattern Candidate recorded — "Evidence heals state"** (2nd occurrence: Attendance derived
 balance; Payment status reconciliation + F2). Not yet AOS law (A6); if CRM/Booking repeat the
 law, elevate at the corresponding Reflection Meeting.
+
+---
+
+## Stage-3 Checkpoint #1 record (Founder-ratified, 2026-07-09)
+
+- Phases 1–5 accepted: money core complete, 34/34 invariant tests green on `school_portal_test`,
+  contract fidelity verified in code (P1/P3/P4/P5/P6/F1/F2), commits 945c9d4..625f059 pushed.
+- **R1 elevated to BLOCKER (Founder):** orphan chargeless PENDING cycle = permanent business
+  deadlock (data looks valid, nothing crashes, but no new package can ever be sold). Fix before
+  leaving Phase 5: sale path hitting the PENDING P2002 checks the existing cycle — chargeless →
+  complete the missing CHARGE idempotently from the cycle's frozen snapshot (Evidence heals
+  state, 3rd occurrence); genuinely charged → real conflict, throw.
+- **BI-12 added** (see REQUIREMENT.md): no orphan cycles; self-healable = healed by the next
+  business action, in-flow only (no cron/job/admin-tool/startup/health-check healing).
+- **IT requirement strengthened (Founder):** the R1 test must prove **idempotency under repeated
+  retries** (crash → retry → retry → retry ⇒ exactly one CHARGE, one cycle), not just one recovery.
+- Seams #2 (refund ordering) and #3 (renewal in `findOne` only) — approved as implemented.
+- commitlint lacks a `test` type (CLI used `chore`) — non-blocker, Reflection Meeting #2 agenda.
+- **New standing Reflection question (Founder, every future Meeting):** _"What did this slice
+  teach the organization about failure recovery?"_ — the Reference Slice is producing not just
+  Reference Architecture but **Reference Failure Recovery** (Attendance: corrections must be
+  retroactive; Payment: partial success must self-heal).

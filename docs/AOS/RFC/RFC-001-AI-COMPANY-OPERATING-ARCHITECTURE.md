@@ -96,6 +96,11 @@ always under Stage-3 supervision, never the responsible owner of Implementation.
 - **Pattern Candidates awaiting Slice #2 (Rule of Three):** Customer Journey before Requirement
   (P3), Capability Model (P4), Boot Contract in `.aos/boot.md` (P6 — active draft, boot untouched
   until Slice #2).
+- **A11 — Standing Reflection question (Founder, 2026-07-09, Slice #2 Checkpoint #1):** every
+  Reflection Meeting asks, as a fixed agenda item: _"What did this slice teach the organization
+  about failure recovery?"_ Rationale: the Reference Slice is accumulating **Reference Failure
+  Recovery** knowledge (retroactive corrections; self-healing partial success) — a knowledge
+  branch tracked deliberately, without creating a framework for it (A6).
 - **A10 — Reference Slice & Knowledge Gain KPI (Founder, post-meeting).** Attendance is the
   company's **Reference Slice** — the benchmark every future slice is compared against. Every
   slice is scored on two axes at its Reflection Meeting: _Shipped through AOS_ (yes/no) and

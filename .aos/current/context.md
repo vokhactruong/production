@@ -1,6 +1,6 @@
 # Current Context
 
-> **Runtime version: slice-02.v6** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v7** — valid only with matching `manifest.md`.
 > **Responsibility:** WHICH knowledge must be loaded — the minimal set.
 
 ## Load (Implementation, Slice #2)
