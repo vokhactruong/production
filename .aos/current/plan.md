@@ -23,9 +23,15 @@
   - **DB for later phases (local only):** dev `postgresql://school_test:***@localhost:5432/school_portal_dev`;
     `TEST_DATABASE_URL=postgresql://school_test:***@localhost:5432/school_portal_test`. Shell-env
     override + `prisma migrate deploy` (never `migrate dev`, never the Supabase URL).
-  - **Phase 2 (payments module) — NEXT.** T3–T8: skeleton + `DerivedMoneyService` (ledger SUMs + P4
-    capacity-FIFO) + `BillingService` sale + `PaymentRecordingService` (createMany + credit branch) +
-    reads. Write each service WITH its invariant test, run against the local test DB.
+  - **Phase 2 (payments module) — DONE (type-check + build + lint ✓).** `apps/api/src/payments/`:
+    dto, repository, `DerivedMoneyService` (ledger SUMs + F2 fully-paid guard + P4 capacity-FIFO),
+    `BillingService` (sale: pro-rata on remaining lessons, snapshot freeze, CHARGE row, one-PENDING
+    guard), `PaymentRecordingService` (createMany PAYMENT+overpay-CREDIT_GRANT, receipt sequence,
+    F2 inline activation), payment/receipt reads, controller, module, registered in app.module.
+    Outstanding derived as Σ CHARGE − Σ(PAYMENT+CREDIT_OFFSET); F2 activates only fully-paid cycles.
+  - **Phase 3 (credit + renewal) — NEXT.** T9 CreditService (withdrawal grant + offset), T10 refund
+    (status transition), T11 T2 lazy renewal + read-path self-heal on enrollment reads.
+  - **Phase 4 seed (R1 roles + perms), Phase 5 all Business Invariant Tests green on school_portal_test.**
     _(CLI: update this section after each phase.)_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →

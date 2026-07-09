@@ -30,6 +30,14 @@ Authorization + §Binding architecture. Changing ANY item = stop → escalate �
 RFC-001 (Operational · Provisional); A6–A10; A7 push rule; A8 CLI end-to-end; Scope Gate;
 ⟡ Pattern Candidates tracked for LESSON: Time-frozen Business Artifact; **Evidence heals state**.
 
+## Stage-3 ratified during implementation
+
+- **P3/D17 (2026-07-09):** receipt references = the PAYMENT row's own `studentId` + `billingCycleId`
+  (both direct, frozen on the append-only row) — **no duplicate `receiptStudentId`/`receiptBillingCycleId`
+  columns**. `receiptNumber` (from `receipt_number_seq`) is the only added receipt field. Stage-3 approved.
+- **Local-DB verification (Founder-approved):** apply via `prisma migrate deploy` + shell-env override
+  to local `school_portal_dev` / `school_portal_test`; never `migrate dev`, never the Supabase `.env` URL.
+
 ## Open escalations (blocking)
 
 - _(none — implementation is unblocked)_
