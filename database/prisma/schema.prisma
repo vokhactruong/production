@@ -30,6 +30,7 @@ model User {
   refreshTokens     RefreshToken[]
   userRoles         UserRole[]
   markedAttendances Attendance[]
+  ledgerEntries     LedgerEntry[]
 
   @@index([status])
   @@index([deletedAt])
@@ -171,6 +172,7 @@ model Student {
   updatedAt     DateTime      @updatedAt
   code          String?       @unique
   enrollments   Enrollment[]
+  ledgerEntries LedgerEntry[]
 
   @@index([status])
   @@index([deletedAt])
@@ -510,6 +512,7 @@ model Enrollment {
   student              Student          @relation(fields: [studentId], references: [id])
   class                Class            @relation(fields: [classId], references: [id])
   attendances          Attendance[]
+  billingCycles        BillingCycle[]
 
   @@index([studentId])
   @@index([classId])
@@ -557,4 +560,107 @@ model Attendance {
   @@index([status])
   @@index([deletedAt])
   @@map("attendances")
+}
+
+enum BillingCycleStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum LedgerEntryType {
+  CHARGE
+  PAYMENT
+  CREDIT_GRANT
+  CREDIT_OFFSET
+  REFUND
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+}
+
+enum CreditRefundStatus {
+  NOT_REFUNDED
+  REFUNDED
+}
+
+/// Credit has exactly two sources in MVP (BI-9): unused value on withdrawal, or
+/// overpayment on a payment. Modeled as an enum so no other provenance is
+/// representable — every CREDIT_GRANT row is traceable to one of these two.
+enum CreditSource {
+  WITHDRAWAL
+  OVERPAYMENT
+}
+
+/// A BillingCycle is what is SOLD and SETTLED — one package purchase for an
+/// Enrollment. It carries the Time-frozen Snapshot Price (frozen at sale,
+/// hard-frozen once any receipt exists — D14/BI-3) and sessionsSold (the cap
+/// this cycle grants). Money is never a stored counter: outstanding/revenue are
+/// DERIVED from LedgerEntry (see DerivedMoneyService). Two lifecycle rules are
+/// DB-protected via raw-SQL partial-unique indexes (Prisma DSL cannot express
+/// partial indexes — see migration 20260710000000_add_payment):
+///   - Exactly one ACTIVE cycle per enrollment  (billing_cycle_one_active_key)
+///   - Exactly one PENDING cycle per enrollment (billing_cycle_one_pending_key, F1)
+/// Renewal materializes the next PENDING cycle lazily on the Enrollment read
+/// path; PENDING → ACTIVE only via a settling payment ("Evidence heals state", F2).
+model BillingCycle {
+  id               String             @id @default(cuid())
+  enrollmentId     String
+  status           BillingCycleStatus @default(PENDING)
+  snapshotPrice    Decimal
+  snapshotDiscount Decimal?
+  sessionsSold     Int
+  note             String?
+  deletedAt        DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  enrollment       Enrollment         @relation(fields: [enrollmentId], references: [id])
+  ledgerEntries    LedgerEntry[]
+
+  @@index([enrollmentId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("billing_cycles")
+}
+
+/// The unified financial Ledger — Derived Balance is Source of Truth applied to
+/// money: every money fact is one append-only evidence row, signed BY ITS TYPE.
+/// `amount` is ALWAYS UNSIGNED (P1); the sign algebra (what adds to owed,
+/// revenue, or liability) lives ONLY in DerivedMoneyService, never scattered.
+/// No stored money counter exists anywhere (BI-7) — outstanding, revenue and
+/// credit balance are grouped SUMs over this table; the ledger must balance
+/// (BI-11). The ledger is NEVER hard-deleted — soft delete or a compensating
+/// entry only (D18). Receipt lives as columns ON the PAYMENT row (P3):
+/// `receiptNumber` comes from the global Postgres SEQUENCE `receipt_number_seq`
+/// (never reused, gaps acceptable), and the row's own `studentId` +
+/// `billingCycleId` ARE the receipt's Time-frozen references to Student +
+/// BillingCycle (D17) — direct and frozen on this immutable row, so no duplicate
+/// reference columns are stored.
+model LedgerEntry {
+  id             String              @id @default(cuid())
+  type           LedgerEntryType
+  amount         Decimal
+  studentId      String
+  billingCycleId String?
+  method         PaymentMethod?
+  receiptNumber  Int?                @unique
+  creditSource   CreditSource?
+  refundStatus   CreditRefundStatus?
+  note           String?
+  createdById    String?
+  deletedAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  student        Student             @relation(fields: [studentId], references: [id])
+  billingCycle   BillingCycle?       @relation(fields: [billingCycleId], references: [id], onDelete: Restrict)
+  createdBy      User?               @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([type])
+  @@index([studentId])
+  @@index([billingCycleId])
+  @@index([deletedAt])
+  @@map("ledger_entries")
 }
