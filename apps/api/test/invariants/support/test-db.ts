@@ -50,6 +50,8 @@ export function createTestPrisma(): PrismaService {
  * objects directly and never exercise the HTTP auth layer.
  */
 const TABLES = [
+  "ledger_entries",
+  "billing_cycles",
   "attendances",
   "enrollments",
   "class_sessions",

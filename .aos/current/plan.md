@@ -39,9 +39,15 @@
     Receptionist (sell+collect+credit.read+receipt) and Accountant (+credit.manage+credit.refund)
     roles; Admin/Super Admin get all; Teacher none. Seed idempotent (ran 2×). Admin permission
     constants (T14). type-check ✓.
-  - **Phase 5 (Business Invariant Tests) — NEXT.** Extend the invariant harness with a billing
-    fixture; write IT-7…IT-13 (BI-1…BI-11) and run ALL green on school*portal_test.
-    *(CLI: update this section after each phase.)\_
+  - **Phase 5 (Business Invariant Tests) — DONE + ALL GREEN.** Harness extended (payment services in
+    `buildServices`, `consumeLessons` helper, money tables in reset). IT-7…IT-13: BI-1 (IT-7),
+    BI-2/3/8 (IT-8), BI-4/9 (IT-9), BI-7/10 (IT-10), BI-5/6 (IT-11), ⚑5 atomicity (IT-12), BI-11
+    conservation (IT-13). **Full suite 34/34 green on school_portal_test** (6 Slice-#1 regressions
+    intact + 7 new). lint(src)+type-check ✓.
+  - **⛳ STAGE-3 CHECKPOINT #1 (end of Phase 5, before frontend) — awaiting cross-review.** Money core
+    (backend + migration + seed + invariant tests) complete + verified. Phases 6–8 (admin frontend,
+    docs, final gates) pending; Stage-3 checkpoint #2 at end of Phase 8.
+    _(CLI: update this section after each phase.)_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →
   **Reflection Meeting #2** (full RFC-001 ratification; P3/P4 pattern candidates second-run

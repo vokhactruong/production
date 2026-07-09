@@ -7,6 +7,11 @@ import { AttendanceRepository } from "../../../src/attendance/attendance.reposit
 import { LessonConsumptionService } from "../../../src/attendance/lesson-consumption.service";
 import { ClassSessionsRepository } from "../../../src/class-sessions/class-sessions.repository";
 import { ClassSessionsService } from "../../../src/class-sessions/class-sessions.service";
+import { PaymentsRepository } from "../../../src/payments/payments.repository";
+import { DerivedMoneyService } from "../../../src/payments/derived-money.service";
+import { BillingService } from "../../../src/payments/billing.service";
+import { PaymentRecordingService } from "../../../src/payments/payment-recording.service";
+import { CreditService } from "../../../src/payments/credit.service";
 
 /**
  * The REAL services, wired by hand with the real PrismaService — no mocks for
@@ -27,6 +32,18 @@ export function buildServices(prisma: PrismaService) {
     auditLogs,
     attendance
   );
+  // Payment services — wired by hand exactly as PaymentsModule does.
+  const paymentsRepository = new PaymentsRepository(prisma);
+  const derivedMoney = new DerivedMoneyService(prisma, lessonConsumption);
+  const billing = new BillingService(
+    prisma,
+    paymentsRepository,
+    auditLogs,
+    lessonConsumption,
+    derivedMoney
+  );
+  const paymentRecording = new PaymentRecordingService(paymentsRepository, auditLogs, derivedMoney);
+  const credit = new CreditService(paymentsRepository, auditLogs, derivedMoney);
   return {
     auditLogs,
     attendanceRepository,
@@ -34,6 +51,11 @@ export function buildServices(prisma: PrismaService) {
     lessonConsumption,
     classSessionsRepository,
     classSessions,
+    paymentsRepository,
+    derivedMoney,
+    billing,
+    paymentRecording,
+    credit,
   };
 }
 
@@ -230,6 +252,28 @@ export async function createSession(
       ...(data.deletedAt && { deletedAt: data.deletedAt }),
     },
   });
+}
+
+/**
+ * Consume `count` lessons for the whole fixture roster: create `count` sessions,
+ * mark everyone PRESENT, and complete each (so the derived consumption counts
+ * them). Session numbers start high to avoid colliding with the fixture session.
+ */
+export async function consumeLessons(
+  prisma: PrismaService,
+  services: Services,
+  fx: FixtureGraph,
+  count: number
+): Promise<void> {
+  for (let i = 0; i < count; i += 1) {
+    const s = await createSession(prisma, fx.classId, 1000 + i, { status: "ONGOING" });
+    await services.attendance.recordSession(
+      s.id,
+      rosterPayload(fx.enrollments, "PRESENT"),
+      fx.teacher
+    );
+    await services.classSessions.update(s.id, { status: "COMPLETED" }, fx.userId);
+  }
 }
 
 /** Bulk payload marking every given enrollment with one status. */
