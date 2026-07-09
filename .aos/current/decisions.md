@@ -1,42 +1,36 @@
 # Active Decisions
 
-> **Runtime version: slice-01.v8** — valid only with matching `manifest.md`.
-> **Responsibility:** WHAT is already decided and binding for this task. Temporary state — loaded
-> at Boot Step 5. These are given constraints; the AI respects them and does not re-derive or
-> re-litigate them. Durable, organization-wide decisions live in the approved documents, not here.
+> **Runtime version: slice-02.v3** — valid only with matching `manifest.md`.
+> **Responsibility:** WHAT is already decided and binding.
 
-## Binding decisions / constraints in effect (Founder, 2026-07-07)
+## Standing company decisions (Reflection Meeting #1) — unchanged
 
-### Architecture (from approved TECHNICAL_ANALYSIS.md — see its "Founder decision record")
+RFC-001 (Operational · Provisional) 4-stage roles; A6 no-abstraction-without-evidence;
+A7 commit-is-not-backup (run orders end with push); A8 one-runtime implementation;
+A9 evidence layer; A10 Reference Slice + Knowledge Gain; lifecycle 4b Execution Authorization;
+Derived Balance = company default.
 
-- **Derived Balance is Source of Truth** — no stored counter; remaining = billingCycleSessions − COUNT(deducting attendance on COMPLETED sessions). Company-wide default for similar capabilities.
-- **Model C with concept separation:** `AttendanceApplicationService` (evidence) → `LessonConsumptionService` (business rule). Same module, separated concepts; names reflect business, not database.
-- **Dependency Inversion at completion:** ClassSession.complete() → Attendance Policy → Lesson Accounting. Completion must not know Attendance directly; analyze interface vs application service for the seam.
-- **Bulk roster endpoint** `POST /attendance/sessions/:sessionId` approved (teacher <10s KPI).
-- **No interactive transactions** on the completion path (pgbouncer constraint; derived balance removes the need).
-- **`attendance.correct`** is a distinct permission for post-48h corrections (Admin/Manager). No role-name checks inside service code.
-- **Business Invariant Tests** (official name) are mandatory; CI gains a `test` step. Framework choice: propose in the plan, flag for approval.
-- **Read path must be aggregate, not N+1** (cross-review comment #1 — explicit task in the plan).
-- **Rescheduled sessions:** rescheduling itself triggers nothing; a moved session that eventually COMPLETEs still deducts. CANCELLED never deducts.
-- **E1 "finalized"** = any recorded status, including EXCUSED.
+## Slice #2 Founder Decisions — FINAL (2026-07-08)
 
-### Business rules (unchanged, from REQUIREMENT.md / BUSINESS_ANALYSIS.md)
+Full table: `docs/slices/slice-02-payment/REQUIREMENT.md` §Founder Decisions. Binding summary:
+prepaid packages (Q1); debt created at sale only — attendance never touches money (Q2);
+auto-renew → PENDING, ACTIVE only on payment, never auto-activate (Q3); full payment default,
+installments allowed, study-while-owing allowed, no MVP debt cap (Q4); mid-cycle pro-rata default
 
-- PRESENT/LATE/ABSENT deduct; EXCUSED does not — named policy value, per-organization configurable later, never scattered literals.
-- Deduction consequence tied to Session → COMPLETED only; completion blocked until attendance finalized for all ACTIVE enrollments (service-layer invariant + test).
-- 48h teacher correction window; corrections only, never deletes, always audited.
-- Teachers get `attendance.read/create/update`.
+- authorized manual override, immutable Snapshot Price on Enrollment (Q5/Q11), discount
+  snapshotted (Q12); unused value → Credit, NOT_REFUNDED→REFUNDED, append-only history (Q6);
+  manual cash/transfer only (Q7); Receipt with reusable data, no VN e-invoice (Q8);
+  Receptionist+Accountant record, Teacher never (Q9); KPIs: collect <1 min, real-time revenue
+  (Q10); ONE ACTIVE cycle per enrollment (D13); snapshot frozen after first receipt (D14).
+  Business Invariants BI-1…BI-8 in the REQUIREMENT are the money-safety list.
 
-### Mandatory Implementation Plan sections (Founder directive)
+## OQ resolutions (Founder, 2026-07-08) — now FINAL
 
-1. **Business Capability Mapping** (opener): Attendance realizes **Participation Management**; future reuse: HRM employee attendance, Booking check-in, CRM event attendance.
-2. **Business Timeline** (diagram): Scheduled → Ongoing → Attendance Recording → Attendance Finalized → Session Completed → Lesson Consumed.
-3. **Known Constraints** (recorded, not solved): Payment (Slice #2) must define remaining-lesson calculation for mid-cycle enrollment.
-
-## Escalation answers received
-
-- All 8 ⚑ decisions of the Technical Analysis: APPROVED with the adjustments above (Founder, 2026-07-07).
+- **D15 (OQ1):** PENDING cycles may consume lessons when Organization Policy allows studying in
+  debt. PENDING is financial status, not learning status; Attendance is never blocked by Payment.
+- **D16 (OQ2):** Credit = refund ledger + purchase offset; sources = withdrawal + overpayment
+  only; **Credit is Organization Liability, never revenue.** BI-9/BI-10 added to REQUIREMENT.
 
 ## Open escalations (blocking)
 
-- _(none — the stage is unblocked)_
+- _(none — Business Analysis is unblocked)_
