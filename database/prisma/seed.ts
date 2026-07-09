@@ -85,6 +85,18 @@ const PERMISSIONS_SEED = [
     code: "attendance.correct",
     description: "Sửa điểm danh sau thời hạn 48 giờ",
   },
+  { name: "Read Billing", code: "billing.read", description: "Xem chu kỳ thanh toán" },
+  {
+    name: "Create Billing",
+    code: "billing.create",
+    description: "Bán gói (tạo chu kỳ thanh toán)",
+  },
+  { name: "Read Payment", code: "payment.read", description: "Xem thanh toán" },
+  { name: "Create Payment", code: "payment.create", description: "Ghi nhận thanh toán" },
+  { name: "Read Credit", code: "credit.read", description: "Xem credit" },
+  { name: "Manage Credit", code: "credit.manage", description: "Rút gói / bù trừ credit" },
+  { name: "Refund Credit", code: "credit.refund", description: "Hoàn credit" },
+  { name: "Read Receipt", code: "receipt.read", description: "Xem biên lai" },
 ];
 
 const ROLES_SEED = [
@@ -94,7 +106,33 @@ const ROLES_SEED = [
   { name: "Teacher", description: "Giáo viên", isSystem: true },
   { name: "Student", description: "Học sinh", isSystem: true },
   { name: "Parent", description: "Phụ huynh", isSystem: true },
+  // R1 (Q9): the first operational money roles. Receptionist sells + collects;
+  // Accountant additionally manages credit and refunds. Teacher gets NONE.
+  { name: "Receptionist", description: "Lễ tân — bán gói & thu tiền", isSystem: true },
+  { name: "Accountant", description: "Kế toán — thu tiền, credit & hoàn tiền", isSystem: true },
 ];
+
+// Money permission bundles (R1). Receptionist: sell + collect + read credit.
+// Accountant: all of that + manage/refund credit. Admin tier: everything.
+const MONEY_PERMISSIONS_ALL = [
+  "billing.read",
+  "billing.create",
+  "payment.read",
+  "payment.create",
+  "credit.read",
+  "credit.manage",
+  "credit.refund",
+  "receipt.read",
+];
+const RECEPTIONIST_MONEY = [
+  "billing.read",
+  "billing.create",
+  "payment.read",
+  "payment.create",
+  "credit.read",
+  "receipt.read",
+];
+const ACCOUNTANT_MONEY = [...RECEPTIONIST_MONEY, "credit.manage", "credit.refund"];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   "Super Admin": [
@@ -163,6 +201,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "attendance.create",
     "attendance.update",
     "attendance.correct",
+    ...MONEY_PERMISSIONS_ALL,
   ],
   Admin: [
     "dashboard.view",
@@ -230,6 +269,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "attendance.create",
     "attendance.update",
     "attendance.correct",
+    ...MONEY_PERMISSIONS_ALL,
   ],
   Editor: [
     "dashboard.view",
@@ -258,6 +298,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
   Student: ["dashboard.view"],
   Parent: ["dashboard.view"],
+  Receptionist: ["dashboard.view", ...RECEPTIONIST_MONEY],
+  Accountant: ["dashboard.view", "dashboard.analytics", ...ACCOUNTANT_MONEY],
 };
 
 const DEFAULT_CATEGORIES = [

@@ -64,4 +64,12 @@ export const PERMISSIONS = {
   ATTENDANCE_CREATE: "attendance.create",
   ATTENDANCE_UPDATE: "attendance.update",
   ATTENDANCE_CORRECT: "attendance.correct",
+  BILLING_READ: "billing.read",
+  BILLING_CREATE: "billing.create",
+  PAYMENT_READ: "payment.read",
+  PAYMENT_CREATE: "payment.create",
+  CREDIT_READ: "credit.read",
+  CREDIT_MANAGE: "credit.manage",
+  CREDIT_REFUND: "credit.refund",
+  RECEIPT_READ: "receipt.read",
 } as const;

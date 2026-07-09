@@ -35,7 +35,12 @@
     guard blocks double-refund). `BillingService.reconcile()` = T2 lazy renewal + F2 self-heal, hooked
     into `EnrollmentsService.findOne` ONLY (detail read path, idempotent, DB-partial-uniques converge).
     Credit endpoints wired; EnrollmentsModule imports PaymentsModule (no DI cycle).
-  - **Phase 4 seed (R1 roles + perms) — NEXT.** Phase 5 = all Business Invariant Tests green on school*portal_test.
+  - **Phase 4 seed (R1 roles + perms) — DONE + VERIFIED on dev DB.** 8 money permission codes;
+    Receptionist (sell+collect+credit.read+receipt) and Accountant (+credit.manage+credit.refund)
+    roles; Admin/Super Admin get all; Teacher none. Seed idempotent (ran 2×). Admin permission
+    constants (T14). type-check ✓.
+  - **Phase 5 (Business Invariant Tests) — NEXT.** Extend the invariant harness with a billing
+    fixture; write IT-7…IT-13 (BI-1…BI-11) and run ALL green on school*portal_test.
     *(CLI: update this section after each phase.)\_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →
