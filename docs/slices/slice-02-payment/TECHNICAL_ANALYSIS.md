@@ -1,6 +1,7 @@
 # Technical Analysis — Product Slice #2: Payment (Tuition)
 
-> **Status: DRAFT — for Stage 3 cross-review (Desktop) → Founder approval of the ⚑ decisions.**
+> **Status: APPROVED FOR IMPLEMENTATION PLANNING — Founder, 2026-07-09 (10/10).**
+> All 8 ⚑ decisions approved; 4 open questions resolved; +D17/D18. See Founder decision record.
 > Drafted by: **Delivery Manager (Claude CLI)**, Stage 2 owner per RFC-001 A2, using
 > `playbook/templates/technical-analysis-template.md`. Format + evidence benchmark:
 > `docs/slices/slice-01-attendance/TECHNICAL_ANALYSIS.md` (the Reference Slice).
@@ -508,11 +509,115 @@ stage._
 
 ---
 
-## Cross-review — AI Co-Architect (Stage 3)
+## Cross-review — AI Co-Architect (Stage 3, 2026-07-09)
 
-_Pending. This draft goes to Desktop (Stage 3) for cross-review before the Founder; the drafting
-runtime does not review its own work (RFC-001 cross-review rule)._
+**Verdict: APPROVE with one correction and three contributions.** TA-W1 is answered the way it was
+mandated — from evidence, and the answer (one module + append-only ledger + derived balances) is
+the faithful money-translation of the Reference-Slice architecture. Traceability table accurate;
+alternatives honestly rejected; the pgbouncer constraint honored, not worked around.
 
-## Founder decision record
+**Correction (F1) — Option T3 violates a FINAL business decision; strike it.** Q3 says the next
+cycle is created **"automatically"** when remaining reaches zero. T3 (explicit staff action) is
+not automatic — it re-opens a FINAL Founder decision and must come off the table. The real choice
+is **T1 vs T2 only**. Stage-3 recommendation: **T2 (lazy materialization on read)** — it is still
+automatic (the system creates it, at read time), needs no new infra, and the idempotency guard
+(partial-unique + P2002) makes racing readers safe. Caveat to record honestly: T2 makes some reads
+side-effecting — the Implementation Plan must confine materialization to a small, explicit code
+path (not sprinkled across queries) so the surprise is contained.
 
-_Pending — Founder approval of the ⚑ decisions in §15._
+**Contribution (F2) — a fourth option for the payment+credit atomicity flag (§7C/§12):**
+`createMany` writes both rows (PAYMENT + CREDIT_GRANT) in **one SQL INSERT statement** — a single
+statement is implicitly atomic on Postgres **without** an interactive transaction, so the pgbouncer
+hazard does not apply. This gives "two rows, one financial fact" exactly the atomicity it needs at
+zero new risk. Recommend the Architect adopt **option (d): single-statement multi-row insert**,
+keeping the explicit CREDIT_GRANT row (uniform BI-9 traceability) without deriving it away.
+
+**Contribution (F3) — Receipt Number generation:** for a **global** monotonic identifier under
+concurrency, a native **Postgres SEQUENCE** is simpler and safer than MAX()+1-with-retry: sequences
+never reuse values (gaps on rollback are acceptable — "never reused" is the invariant, "no gaps"
+was never required), and they eliminate the race entirely. `sessionNumber` used MAX() because it is
+_per-class_; a global counter is exactly what sequences are for. Recommend within ⚑ #4.
+
+**Concurrences:** DECISION A → **A1 unified ledger** (the conservation-of-value argument is
+decisive); ⚑ #4 scope → **global**; ⚑ #7 → **R1** (R2 contradicts Q9, as the draft itself flags);
+§16's four open questions are genuine **business** questions — they go to the Founder alongside
+the ⚑ list, and none of them blocks approval of the architecture direction.
+
+**Process note:** drafted by CLI (Stage 2), reviewed by Desktop (Stage 3) — cross-review rule
+held. Approval authority for §15's 8 ⚑ decisions and §16's 4 questions remains with the Founder.
+
+## Founder decision record (2026-07-09) — all ⚑ APPROVED; GO to Implementation Plan
+
+1. **⚑1 Money models + migration:** APPROVED — BillingCycle, unified financial ledger, snapshot
+   price, receipt. No over-engineering found.
+2. **⚑2 DECISION A:** **A1 — Unified Ledger.** The most important Payment decision: Attendance
+   proved Evidence → Derived Balance; Payment keeps the philosophy intact.
+3. **⚑3 Snapshot pricing:** on **BillingCycle**, not Enrollment — renewal creates a new cycle with
+   a new snapshot.
+4. **⚑4 Receipt Number:** **Postgres SEQUENCE** (not MAX()+1) — born for exactly this problem;
+   gaps are acceptable, "never reused" is the invariant.
+5. **⚑5 Atomicity:** **option (d) — `createMany`, two rows in one SQL statement.** No interactive
+   transaction, no pgbouncer exposure. "Simple but solid — the AOS kind of solution."
+6. **⚑6 Renewal trigger:** **T2 — lazy materialization** (T3 struck: violated Q3 FINAL). Added
+   constraint: materialization happens **only on the Enrollment read path** — no side effects
+   scattered across other queries.
+7. **⚑7 RBAC:** **R1 — create Receptionist + Accountant roles now**, no deferral.
+8. **⚑8 Endpoint shape:** APPROVED — one round-trip = one payment = one receipt = one credit if any.
+
+**Open questions resolved:**
+
+- **OQ-A (pro-rata basis):** remaining = **remaining lessons of the package** — evidence-based
+  (sessions actually taught/consumed), never calendar-based. Attendance/session evidence is the
+  source of truth.
+- **OQ-B (installment):** **no schedule entity** — multiple PAYMENT rows until outstanding = 0.
+- **OQ-C (renewal price):** **current Course price** at renewal time — a new cycle is a new sale.
+  Centers wanting the old price use the authorized override (Q5-C). Default simple, flexibility kept.
+- **OQ-D (credit scope):** **Student level**, not enrollment level — offset on a new package is
+  otherwise nearly impossible.
+
+**New decisions:**
+
+- **D17 — Receipt references Student and BillingCycle (Founder-refined wording, 2026-07-09).**
+  Receipt stores a direct reference to Student and BillingCycle even though Student is derivable
+  via Enrollment. This is a deliberate exception to the "never store derived data" default:
+  a Receipt is a **Time-frozen Business Artifact** (like Snapshot Price) and must reference the
+  student exactly as at issuance — for audit, reconciliation, and Parent Portal — even if the
+  Enrollment later changes or closes. **Architecture rule attached to this exception:** it sets
+  no precedent for casual denormalization; every exception to the Derived-Data default must prove
+  the object is a Business Artifact requiring time-frozen immutability.
+
+  **⟡ Pattern Candidate — "Time-frozen Business Artifact" rule (Founder, 2026-07-09; NOT yet AOS
+  law per A6 — track through Slice #3/#4 before elevation):**
+  _Default: never store derived data. Exception: only when the object is a Business Artifact that
+  must be frozen in time._ The snapshot question stops being taste and becomes two tests —
+  Is it a Business Artifact? Does it need to be time-frozen? Yes+Yes → snapshot; otherwise → derive.
+
+  | Artifact            | Snapshot? | Why                                 |
+  | ------------------- | --------- | ----------------------------------- |
+  | Receipt             | ✅        | Legal/business document — immutable |
+  | BillingCycle price  | ✅        | Price at transaction time must hold |
+  | Enrollment snapshot | ✅        | State captured at registration      |
+  | Remaining lessons   | ❌        | Always derived from Attendance      |
+  | Outstanding balance | ❌        | Always derived from the Ledger      |
+  | Revenue             | ❌        | Always derived from the Ledger      |
+
+  Evidence so far: Slice #1 (Course→Class snapshots vs derived lesson balance) and Slice #2
+  (BillingCycle/Receipt snapshots vs derived money). Carry into Slice #2's LESSON.md; candidate
+  for elevation when CRM/Booking/ERP repeat the same law.
+
+- **D18 — The ledger is never hard-deleted.** Soft delete or correction (compensating entry)
+  only. Money never disappears.
+
+**Founder assessment:** 10/10 — the TA did not "DDD-ify" the system; it derived Payment from
+Attendance evidence. Attendance is now understood as **Reference Slice + Reference Decisions**:
+it reuses not just patterns but a way of deciding.
+
+**Post-authorization addendum (Founder, 2026-07-09 — recorded verbatim by request):**
+
+> **"Evidence heals state."**
+
+When state is wrong but evidence is correct, the system can always self-repair — status is
+derived, evidence is truth. Observed twice now: Slice #1 (derived balance made reversal true by
+construction) and Slice #2 (F2 — a paid-but-still-PENDING cycle reconciles itself from the
+ledger on read). **⟡ Pattern Candidate** — not yet AOS law (A6); elevate if CRM/Booking repeat
+the same law.

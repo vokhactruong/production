@@ -1,26 +1,35 @@
 # Active Decisions
 
-> **Runtime version: slice-02.v4** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v6** — valid only with matching `manifest.md`.
 > **Responsibility:** WHAT is already decided and binding.
 
-## Standing company decisions (unchanged)
+## ❄️ THE FROZEN IMPLEMENTATION CONTRACT (Execution Authorization, 2026-07-09)
 
-RFC-001 (Operational · Provisional); A6 no-abstraction-without-evidence; A7 commit-is-not-backup;
-A8 one-runtime implementation (CLI end-to-end); A9 evidence layer; A10 Reference Slice +
-Knowledge Gain; lifecycle 4b; Derived Balance company default.
+Authoritative record: `docs/slices/slice-02-payment/IMPLEMENTATION_PLAN.md` §Execution
+Authorization + §Binding architecture. Changing ANY item = stop → escalate → wait.
 
-## Slice #2 business decisions — FINAL (do not re-open)
+- Business law: Q1–Q12, D13–D18; invariants **BI-1…BI-11** (BI-11: the ledger must balance).
+- A1 unified ledger (CHARGE/PAYMENT/CREDIT_GRANT/CREDIT_OFFSET/REFUND), **unsigned amounts** (P1).
+- BillingCycle: snapshot price frozen at sale, hard-frozen after first receipt (D14); **both**
+  partial-uniques — one ACTIVE **and** one PENDING (F1) — database-protected.
+- Receipt: Postgres SEQUENCE, global, RC-format, **columns on the PAYMENT row** (P3), refs Student
+  - BillingCycle (D17 time-frozen artifact); never mutated/hard-deleted (D18).
+- Payment+credit written in **one createMany statement**; no `$transaction` on any money path.
+- Renewal: T2 lazy, Enrollment read path only, idempotent; **self-healing activation** when
+  derived outstanding = 0 (F2 — "Evidence heals state"); renewal at current Course price.
+- Attribution: **capacity-based FIFO** (P4) — never timestamps; boundary math in
+  DerivedMoneyService; LessonConsumptionService untouched.
+- Credit: student-scoped; sources = withdrawal + overpayment only; refund = status transition;
+  offset conserves value (BI-10/BI-11).
+- RBAC: R1 — Receptionist + Accountant roles; `credit.manage` + separate `credit.refund` (P6);
+  PaymentMethod = CASH, BANK_TRANSFER (P5); Teacher excluded.
+- Revenue vs liability: strictly separate derived views; aggregate queries, never N+1.
 
-Q1–Q12, D13–D16: full table in REQUIREMENT.md §Founder Decisions; operational restatement in
-its §Business Rules; money-safety list BI-1…BI-10.
+## Standing company decisions
 
-## Founder sign-off additions (2026-07-09 — binding on TA)
-
-- **Receipt Number principle:** Immutable · Globally Unique · Never Reused (sessionNumber analogue).
-- **Credit is a branch inside the Payment flow** — never a separate module/screen; <1-min KPI is a Business KPI.
-- **TA-W1 mandated:** aggregate boundary question answered from evidence, not theory.
-- Watch-items 1–4 (BUSINESS_ANALYSIS.md) carried unchanged.
+RFC-001 (Operational · Provisional); A6–A10; A7 push rule; A8 CLI end-to-end; Scope Gate;
+⟡ Pattern Candidates tracked for LESSON: Time-frozen Business Artifact; **Evidence heals state**.
 
 ## Open escalations (blocking)
 
-- _(none — Technical Analysis is unblocked)_
+- _(none — implementation is unblocked)_

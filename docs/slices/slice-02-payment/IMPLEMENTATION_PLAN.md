@@ -1,6 +1,8 @@
 # Implementation Plan — Product Slice #2: Payment (Tuition)
 
-> **Status: DRAFT — for Stage 3 cross-review (Desktop) → Execution Authorization (stage 4b, Founder + Chief Architect).**
+> **Status: EXECUTION AUTHORIZED — Implementation Contract FROZEN (Founder + Chief Architect, 2026-07-09).**
+> From this point Implementation may not change architecture — only realize it. See the signed
+> Execution Authorization record at the end (F1/F2 binding corrections; P1–P6 resolved; BI-11 added).
 > Drafted by: **Delivery Manager (Claude CLI)**, Stage 2 owner per RFC-001 A2, using
 > `playbook/templates/implementation-plan-template.md`, extended with the three mandatory Founder
 > sections (Business Capability Mapping, Business Timeline, Known Constraints).
@@ -178,7 +180,7 @@ Verification legend: **B** = `pnpm build` · **L** = `pnpm lint` · **T** = `pnp
 2. [ ] **Migration `20260710000000_add_payment`** (new folder; existing migrations immutable). Create
        the tables, enums, FKs (`ON DELETE RESTRICT`, house style), indexes; the **raw-SQL
        partial-unique** `CREATE UNIQUE INDEX billing_cycle_one_active_key ON "billing_cycles"("enrollmentId")
-   WHERE status = 'ACTIVE' AND "deletedAt" IS NULL;` with a business-rule comment (pattern:
+WHERE status = 'ACTIVE' AND "deletedAt" IS NULL;` with a business-rule comment (pattern:
        `migrations/20260705000000_add_enrollment/migration.sql` active-enrollment index); and the
        **receipt SEQUENCE** `CREATE SEQUENCE receipt_number_seq;` (⚑4). _Verify:_ `pnpm db:migrate` on
        dev DB; M: two ACTIVE cycles for one enrollment → unique violation; `nextval('receipt_number_seq')`
@@ -442,11 +444,87 @@ the Implementation Contract. No code, schema, or migration is written by this do
 
 ---
 
-## Cross-review — AI Co-Architect (Stage 3)
+## Cross-review — AI Co-Architect (Stage 3, 2026-07-09)
 
-_Pending. This draft goes to Desktop (Stage 3) for cross-review before Execution Authorization; the
-drafting runtime does not review its own work (RFC-001 cross-review rule)._
+**Verdict: APPROVE with two corrections (binding on implementation) and P1–P6 recommendations.**
+Sequencing, dependency graph, mandatory sections, BI mapping 1:1, and Scope-Gate discipline all
+check out against the approved TA. The two corrections below are defects the plan would have
+carried into code:
 
-## Execution Authorization (stage 4b) — Founder + Chief Architect
+**Correction (F1) — the renewal idempotency guard has no DB backstop.** T2's migration creates
+only the ACTIVE partial-unique. But BI-4's guarantee ("exactly one PENDING successor, however many
+times the trigger fires") relies on partial-unique + P2002 — and there is **no unique index on
+PENDING**. Concurrent enrollment reads racing through T11 could each create a PENDING cycle, and
+no P2002 would fire. **Fix: T2 must also create
+`billing_cycle_one_pending_key ON "billing_cycles"("enrollmentId") WHERE status = 'PENDING' AND
+"deletedAt" IS NULL`** (or a combined non-terminal index). IT-9's race case must assert against
+the index, not just the app guard.
 
-_Pending — signature freezes the binding architecture + ⚑ P1–P6 as the Implementation Contract._
+**Correction (F2) — T6's PENDING→ACTIVE activation is a second write outside the atomic
+statement.** `createMany` covers PAYMENT+CREDIT_GRANT, but the cycle-status UPDATE is a separate
+statement: if it fails after the ledger write succeeds, the cycle stays PENDING though fully paid.
+The crack is small but money-visible. **Fix: make activation idempotent and self-healing on the
+read path** — the same T2 machinery: when a cycle is read with derived `outstanding = 0` and
+`status = PENDING`, transition it to ACTIVE (idempotent, guarded). The inline activation in T6
+stays (fast path); the read path guarantees convergence (safety net). "Settled" is derivable, so
+the status can always be reconciled from evidence — Derived Balance healing its own state.
+
+**P1–P6 recommendations:**
+
+- **P1:** prefer the **unsigned amount** alternative — sign algebra lives in one place
+  (`DerivedMoneyService` queries, per type), matching the DEDUCTING_STATUSES single-policy-value
+  precedent. Signed storage invites double-negative bugs and per-row validation burden.
+- **P3:** **concur with the proposal** — receipt fields on the PAYMENT row keeps "one payment =
+  one receipt" inside the single `createMany`; a separate table would reopen the atomicity seam.
+- **P4:** **recommend capacity-based sequential attribution, not timestamp-based.** Order cycles
+  by creation; each absorbs consumption up to its `sessionsSold` cap;
+  `remaining(current) = cap − max(0, totalConsumed − Σ prior caps)`. Reason from Slice #1
+  evidence: the 48h correction window means consumption **changes retroactively**
+  (PRESENT→EXCUSED lowers a past count) — a stored "which cycle was active when this lesson
+  happened" timestamp would go stale the moment a correction lands, and cannot be re-derived.
+  Capacity-ordered attribution is a pure function of current evidence — always consistent,
+  nothing stored, nothing to heal. This also keeps `LessonConsumptionService` untouched (one
+  total; the boundary math lives in `DerivedMoneyService`).
+- **P5:** concur — `CASH, BANK_TRANSFER`.
+- **P6:** concur — `credit.manage` + distinct `credit.refund` (attendance.correct precedent).
+
+**Process note:** plan drafted by CLI (Stage 2), reviewed by Desktop (Stage 3) — cross-review rule
+held. F1/F2 return to the drafting runtime to incorporate (fix-loop, RFC-001 A3); P1–P6 +
+corrections go to the Founder + Chief Architect for Execution Authorization (4b).
+
+## Execution Authorization (stage 4b) — SIGNED (Founder + Chief Architect, 2026-07-09)
+
+**IMPLEMENTATION PLAN: EXECUTION AUTHORIZED. Implementation Contract: FROZEN.**
+From this point the Delivery Manager does not design — it realizes the frozen decisions exactly.
+A discovered need to change any item below = stop → escalate → wait.
+
+**Binding corrections (Stage 3 F1/F2 — ratified):**
+
+- **F1:** T2's migration MUST also create
+  `billing_cycle_one_pending_key ON "billing_cycles"("enrollmentId") WHERE status='PENDING' AND
+"deletedAt" IS NULL` — Exactly One PENDING and Exactly One ACTIVE are both **database-protected**,
+  never application-only. IT-9 asserts against the index.
+- **F2:** cycle status is reconciled from evidence — inline PENDING→ACTIVE on settlement (fast
+  path) + idempotent self-healing activation on the read path when derived `outstanding = 0`
+  (safety net). Founder's canonical phrasing, recorded verbatim: **"Evidence heals state."**
+
+**P1–P6 resolved:**
+
+- **P1:** unsigned `amount` — sign algebra lives only in `DerivedMoneyService`.
+- **P3:** receipt fields as columns on the PAYMENT ledger row — no separate Receipt entity.
+- **P4:** **capacity-based sequential (FIFO) attribution** — cycles ordered by creation, each
+  absorbs consumption up to `sessionsSold`; never timestamp-based (48h retroactive corrections
+  would rot timestamps; capacity math is always freshly derived). First proof that the Reference
+  Slice reuses **reasoning**, not just code.
+- **P5:** `PaymentMethod { CASH, BANK_TRANSFER }`.
+- **P6:** `credit.manage` + distinct `credit.refund` from day one.
+
+**BI-11 added (Founder): the ledger must balance.** Per cycle:
+`CHARGE = Σ PAYMENT + Σ CREDIT_OFFSET + outstanding`. Per student:
+`Σ CREDIT_GRANT = Σ CREDIT_OFFSET + Σ REFUND + credit balance`. Value never disappears, never
+appears from nothing. → **New task T20b — IT-13 (BI-11 conservation property test)**, part of
+Phase 5, blocking T25/T26 like every other IT.
+
+**⟡ Pattern Candidate recorded — "Evidence heals state"** (2nd occurrence: Attendance derived
+balance; Payment status reconciliation + F2). Not yet AOS law (A6); if CRM/Booking repeat the
+law, elevate at the corresponding Reflection Meeting.

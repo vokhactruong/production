@@ -117,6 +117,11 @@ dashboard and sees revenue and outstanding debt that are true right now.
 - **BI-10:** Credit never appears as revenue. Revenue views count settled payments;
   credit balances are liability. Offsetting credit against a purchase reduces the amount due and
   the liability by the same amount — value is conserved, never double-counted (D16).
+- **BI-11 (Founder, 2026-07-09 — Execution Authorization):** **The ledger must balance.** At any
+  point in time, every unit of value is fully accounted for: per cycle,
+  `CHARGE = Σ PAYMENT + Σ CREDIT_OFFSET + outstanding`; per student,
+  `Σ CREDIT_GRANT = Σ CREDIT_OFFSET + Σ REFUND + credit balance`. Value never disappears and is
+  never created from nothing.
 
 ## Slice Success Metrics (Product KPIs)
 

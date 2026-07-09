@@ -1,30 +1,22 @@
 # Current Task
 
-> **Runtime version: slice-02.v4** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v6** — valid only with matching `manifest.md`.
 > **Responsibility:** WHAT is being worked on.
 
 - **Feature:** Payment (Tuition) — Product Slice #2 (Capability: Revenue Collection & Balance Settlement)
-- **Module / area:** Technical Analysis only — will touch (on paper): new payment domain area, enrollments (snapshot price), attendance/lesson-consumption (read-only consumer), seed/permissions, admin frontend, invariant tests.
-- **Objective (one sentence):** Produce the Technical Analysis that starts from the FINAL Business Rules and answers TA-W1 (aggregate boundaries) from Reference-Slice evidence, with every architecture decision ⚑-flagged.
-- **Lifecycle stage:** Technical Analysis (stage 3)
-- **Linked Playbook artifact(s):** `playbook/templates/technical-analysis-template.md`
-- **Definition of Done (pointer):** REQUIREMENT.md DoD + BI-1…BI-10. Stage exit: approach reuses existing patterns; all decisions flagged, none decided.
+- **Module / area:** database (money migration + F1 indexes), apps/api/src/payments/ (new), enrollments (sale/renewal/self-healing touchpoints), seed (R1 roles + permissions), apps/api/test/invariants/ (IT-7…IT-13), apps/admin/src/features/payments/, docs.
+- **Objective (one sentence):** Implement the frozen contract — IMPLEMENTATION_PLAN.md T1–T26 + T20b — verifying at write time, phase by phase.
+- **Lifecycle stage:** Implementation (stage 5)
+- **Linked Playbook artifact(s):** `playbook/guides/implementation-guide.md` + `checklists/implementation-checklist.md`
+- **Definition of Done (pointer):** IMPLEMENTATION_PLAN.md §Definition of Done (authoritative) — includes BI-1…BI-11 invariant tests green, gates pass, <1-min collect measured, docs updated.
 
-## Mandated analyses (Founder sign-off, 2026-07-09)
+## Execution reminders (from the signed contract — non-negotiable)
 
-1. **TA-W1:** Payment → Receipt → Credit → Refund — one aggregate or several? Answer from
-   evidence (Reference Slice architecture + approved Business Rules), not DDD theory. First test
-   of Reference-Slice architecture reusability.
-2. **Receipt Number:** immutable, globally unique, never reused (sessionNumber precedent) —
-   propose the mechanics.
-3. **Credit branch:** overpayment→credit inside the single payment-recording flow (<1-min KPI).
-4. **Derived money:** outstanding/revenue derived from sale+payment evidence (BI-7); revenue vs
-   liability strictly separated views (BI-10).
-5. Watch-items 1–4 from BUSINESS_ANALYSIS.md carried unchanged.
-
-## Constraints
-
-- Business rules are upstream; no technical option may alter them.
-- Reuse before inventing: enrollments/attendance module patterns, partial-unique convention,
-  audit pairing, no-interactive-transaction constraint (pgbouncer — verify it still binds money paths).
-- End with grouped commit + push (A7).
+- **F1:** migration creates BOTH partial-uniques (one_active_key AND one_pending_key).
+- **F2:** self-healing activation on the enrollment read path ("Evidence heals state") + inline fast path.
+- **P1:** unsigned amounts — sign algebra only in DerivedMoneyService.
+- **P3:** receipt columns on the PAYMENT row — one createMany, never a second table write.
+- **P4:** capacity-based FIFO attribution — no timestamps, boundary math in DerivedMoneyService, LessonConsumptionService untouched.
+- **T20b/IT-13:** BI-11 conservation property test (per-cycle and per-student equations).
+- No `$transaction` on any money path; audit every money write; permission-as-code; Teacher gets nothing.
+- Verification legend per task (B/L/T/IT/M); test DB `school_portal_test` exists (TEST_DATABASE_URL).
