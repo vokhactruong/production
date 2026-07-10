@@ -89,18 +89,34 @@
     one-round-trip payment+credit flow, permissions R1, revenue-vs-liability separation, no-RPC).
     `docs/ROADMAP.md`: Payment marked in-progress + dated "Payment (Tuition) v1" section (honest
     status: money core + frontend done, close-out pending). Prettier via pre-commit hook.
-  - Phase 8 gates + Reflection NEXT; Stage-3 checkpoint #2 at end of Phase 8.
-    _(CLI: update this section after each phase.)_
-- Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
-  (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →
-  **Reflection Meeting #2** (full RFC-001 ratification; P3/P4 pattern candidates second-run
-  evidence) → Done/Release → Slice #3.
+  - **Phase 8 (final gates + Reflection) — DONE (runnable gates green; measurement blocked).**
+    Gates run: `turbo type-check` 8/8 packages ✓, `turbo lint` 0 errors (11 pre-existing warnings,
+    none from new files) ✓, `@school/api build` ✓, `@school/admin build` ✓. **DoD walked
+    item-by-item** (see LESSON.md) — all met except the live `<1-min` collect measurement +
+    invariant re-run + seed-idempotency re-check, all blocked by the missing local
+    `TEST_DATABASE_URL` (documented, not fabricated). **Reflection + `docs/slices/slice-02-payment/
+LESSON.md` (DRAFT) written:** A11 failure-recovery answer (R1 material → "recovery is
+    re-derivation, not repair"); ⟡ candidates carried (Time-frozen Business Artifact, Evidence heals
+    state ×3, Capacity-FIFO, + tracked Business-Invariant→Database-Invariant); **Knowledge Gain
+    proposed = 3** (strict A10: the 4 ⟡ candidates count 0 until a second context; adopted = A11,
+    A12, BI-12 in-flow-healing discipline) — ratified only at Meeting #2. RFC/disposition proposals
+    P1–P7 recorded (incl. P6: the two flagged contract-vs-reality drifts — `/payments/summary`
+    additive read + `billing.override` not-seeded).
+- Not started: **Reflection Meeting #2** (score Knowledge Gain; rule on P1–P7; ratify or defer the ⟡
+  candidates) → Stage-3 review of implementation → live KPI + IT re-run on local DB → Done/Release →
+  Slice #3.
 
 ## Next step
 
-- CLI session: boot via AOS.md → verify manifest (slice-02.v6) → execute Phase 1 (T1–T2, incl.
-  **both** F1 partial-uniques + receipt SEQUENCE) → verify → commit → continue phase by phase.
-  Push at every stopping point (A7).
+- **⛳ STAGE-3 CHECKPOINT #2 — handoff (Phases 6–8 complete).** Implementation is code-complete and
+  green on every runnable gate; commits pushed per phase (A7). Founder/Stage-3 to review, then:
+  1. **Run on local DB** (needs `TEST_DATABASE_URL=…school_portal_test`): `pnpm --filter @school/api test`
+     (expect 38/38), `pnpm db:seed` twice (idempotency), and walk the Sell→Collect flow to record the
+     **`<1-min` collect measurement** (in-app stopwatch) + real-time revenue KPI into this plan.
+  2. **Ratify the two flagged drifts** (LESSON P6): `GET /payments/summary` additive read;
+     `billing.override` not-in-R1 (override UI gated on `billing.create`).
+  3. **Reflection Meeting #2:** score Knowledge Gain (proposed 3), rule on P1–P7, decide the ⟡
+     candidates (Rule of Three / non-School-Portal context for "Evidence heals state").
 
 ## Supervision gates (Stage 3 — checked at every handoff and at the implementation review)
 
