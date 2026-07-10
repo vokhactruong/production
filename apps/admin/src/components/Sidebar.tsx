@@ -21,6 +21,8 @@ import {
   Layers,
   ClipboardList,
   ClipboardCheck,
+  Wallet,
+  TrendingUp,
 } from "lucide-react";
 import { useAuthStore, useUIStore } from "../store/auth.store";
 import { cn } from "../utils";
@@ -82,6 +84,18 @@ const MENU = [
     icon: ClipboardCheck,
     label: "Điểm danh",
     permission: PERMISSIONS.ATTENDANCE_READ,
+  },
+  {
+    href: "/payments",
+    icon: Wallet,
+    label: "Thu học phí",
+    permission: PERMISSIONS.PAYMENT_CREATE,
+  },
+  {
+    href: "/payments/overview",
+    icon: TrendingUp,
+    label: "Doanh thu & Credit",
+    permission: PERMISSIONS.PAYMENT_READ,
   },
   { href: "/roles", icon: Shield, label: "Vai trò", permission: PERMISSIONS.ROLE_READ },
   { href: "/permissions", icon: Key, label: "Quyền hạn", permission: PERMISSIONS.PERMISSION_READ },

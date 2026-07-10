@@ -1,6 +1,6 @@
 # Current Plan
 
-> **Runtime version: slice-02.v7** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v8** — valid only with matching `manifest.md`.
 > **Responsibility:** WHERE the work stands and what comes next.
 
 - **Plan source:** `docs/slices/slice-02-payment/IMPLEMENTATION_PLAN.md` (**EXECUTION AUTHORIZED — Implementation Contract FROZEN**, Founder + Chief Architect, 2026-07-09)
@@ -52,8 +52,35 @@
     helper. **IT-14 (4 cases: sequential retry×5, concurrent×6, real-conflict, renewal-orphan heal) —
     full suite 38/38 green on school_portal_test.** (Also: corrected the manifest's stale file-table
     v6→v7 and REQUIREMENT status → BI-1…BI-12.)
-  - **Phase 6 (admin frontend) — NEXT** (unblocked). Then Phase 7 docs, Phase 8 gates + Reflection;
-    Stage-3 checkpoint #2 at end of Phase 8.
+  - **Phase 6 (admin frontend) — DONE (type-check + lint + build ✓, both apps).**
+    `apps/admin/src/features/payments/` scaffold (T21): `api/payments.api.ts`, `hooks/query-keys.ts`
+    (three factories — billingCycle/payment/credit), `types.ts`, hooks `use-billing-cycles`,
+    `use-payments`, `use-credits`, `use-money-summary`, `use-sell-package`, `use-record-payment`,
+    `use-refund-credit` (payment/sell mutations invalidate enrollment keys — remaining/renewal is
+    derived on that read path, per CACHE.md). **T22 Sell+Collect** (`pages/payments/SellAndCollect.tsx`):
+    one screen — pick enrollment → sell (pro-rata computed server-side; optional sessionsSold/discount/
+    override) → collect (amount+method; **overpayment→credit inline**) → receipt (printable);
+    installments supported; loading/empty/error states; `<Can>` gating; **in-app KPI stopwatch**
+    (enrollment-chosen → receipt-issued) renders "Hoàn tất trong Ns" for the <1-min measurement.
+    **T23 Owner view** (`pages/payments/MoneyOverview.tsx`): three **strictly separate** figures —
+    revenue / outstanding / credit-liability (BI-10, never blended, explicit UI note) from a new
+    additive read `GET /payments/summary`; credit list + refund action (Accountant, confirm modal,
+    D18-safe wording). **T24 routing**: lazy `/payments` (PAYMENT*CREATE) + `/payments/overview`
+    (PAYMENT_READ) via `PermissionRoute`; two Sidebar entries. **T14 constants already existed**
+    (Phase 4). \_Backend realized to serve T23 (flagged for Checkpoint #2):* `GET /payments/summary`
+    (`payment.read`) + `DerivedMoneyService.getTotalOutstanding/getTotalCreditLiability` (read-only
+    grouped SUMs) + credit list student-join (display only). No money-write path touched.
+  - **⚠ Phase 6 verification GAP (environment blocker, not fabricated):** the local
+    `TEST_DATABASE_URL` (`school_portal_test`) is **not present in this session** — only the
+    production Supabase `DATABASE_URL` is configured, which the contract forbids for tests/servers.
+    Local PG18 is listening on :5432 but `school_test` requires a password not available here (trust
+    auth off; PG superuser off-limits per policy). Therefore **(a) the 38/38 IT re-run and (b) the
+    live T22 <1-min measurement are NOT run in this session.** Phase-6 backend changes are additive
+    and money-write-neutral (a display join + read-only grouped SUMs) and pass type-check + build; the
+    IT re-run should still be executed by a session with local-DB access. The T22 stopwatch is wired
+    so the number is captured the moment the flow is walked on a seeded local DB. **Both are the top
+    Checkpoint-#2 items** — number to be recorded here once measured.
+  - Then Phase 7 docs, Phase 8 gates + Reflection; Stage-3 checkpoint #2 at end of Phase 8.
     _(CLI: update this section after each phase.)_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →

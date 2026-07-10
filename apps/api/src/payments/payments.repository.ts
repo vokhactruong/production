@@ -48,6 +48,17 @@ export type LedgerEntryRecord = Prisma.LedgerEntryGetPayload<{
   select: typeof LEDGER_ENTRY_SELECT;
 }>;
 
+// Credit rows carry the student so the Accountant can see WHO a refund pays back
+// (a display join only — kept off the hot payment-recording path's select).
+const CREDIT_LIST_SELECT = {
+  ...LEDGER_ENTRY_SELECT,
+  student: { select: { id: true, code: true, firstName: true, lastName: true } },
+} satisfies Prisma.LedgerEntrySelect;
+
+export type CreditListRecord = Prisma.LedgerEntryGetPayload<{
+  select: typeof CREDIT_LIST_SELECT;
+}>;
+
 @Injectable()
 export class PaymentsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -153,6 +164,22 @@ export class PaymentsRepository {
 
   async countLedger(where: Prisma.LedgerEntryWhereInput): Promise<number> {
     return this.prisma.ledgerEntry.count({ where });
+  }
+
+  /** Credit grants for the Accountant view — same filter as findLedger, but the
+   * select joins the student (display only). */
+  async findCredits(params: {
+    where: Prisma.LedgerEntryWhereInput;
+    skip: number;
+    take: number;
+  }): Promise<CreditListRecord[]> {
+    return this.prisma.ledgerEntry.findMany({
+      where: params.where,
+      select: CREDIT_LIST_SELECT,
+      orderBy: { createdAt: "desc" },
+      skip: params.skip,
+      take: params.take,
+    });
   }
 
   async findLedgerById(id: string): Promise<LedgerEntryRecord | null> {

@@ -110,6 +110,56 @@ export class DerivedMoneyService {
     return this.num(r._sum.amount);
   }
 
+  /**
+   * Total outstanding (receivables) across all live, non-cancelled cycles — one
+   * grouped SUM (aggregate, never N+1). The company-wide "money owed to us" the
+   * Owner watches (Q10). Cancelled cycles are excluded (their debt was resolved
+   * by withdrawal/credit); soft-deleted rows never count.
+   */
+  async getTotalOutstanding(): Promise<number> {
+    const rows = await this.prisma.ledgerEntry.groupBy({
+      by: ["type"],
+      where: {
+        deletedAt: null,
+        type: { in: ["CHARGE", "PAYMENT", "CREDIT_OFFSET"] },
+        billingCycle: { is: { deletedAt: null, status: { not: "CANCELLED" } } },
+      },
+      _sum: { amount: true },
+    });
+    let charge = 0;
+    let settled = 0;
+    for (const r of rows) {
+      const v = this.num(r._sum.amount);
+      if (r.type === "CHARGE") charge += v;
+      else settled += v; // PAYMENT + CREDIT_OFFSET both reduce owed
+    }
+    return charge - settled;
+  }
+
+  /**
+   * Total outstanding credit liability across every student — Σ CREDIT_GRANT −
+   * Σ CREDIT_OFFSET − Σ REFUND, one grouped SUM. Kept STRICTLY separate from
+   * revenue (BI-10): liability is money we owe back, never counted as earnings.
+   */
+  async getTotalCreditLiability(): Promise<number> {
+    const rows = await this.prisma.ledgerEntry.groupBy({
+      by: ["type"],
+      where: {
+        deletedAt: null,
+        type: { in: ["CREDIT_GRANT", "CREDIT_OFFSET", "REFUND"] },
+      },
+      _sum: { amount: true },
+    });
+    let grant = 0;
+    let used = 0;
+    for (const r of rows) {
+      const v = this.num(r._sum.amount);
+      if (r.type === "CREDIT_GRANT") grant += v;
+      else used += v; // CREDIT_OFFSET + REFUND both draw the balance down
+    }
+    return grant - used;
+  }
+
   /** Credit balance per student (student-scoped, OQ-D), in one grouped query. */
   async getCreditBalanceByStudentIds(studentIds: string[]): Promise<Map<string, number>> {
     const out = new Map<string, number>();

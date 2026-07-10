@@ -77,6 +77,13 @@ export class PaymentsController {
     return this.payments.findPayments(query);
   }
 
+  @Get("payments/summary")
+  @RequirePermissions("payment.read")
+  @ApiOperation({ summary: "Tổng quan doanh thu / công nợ / credit (BI-10 tách bạch)" })
+  summary() {
+    return this.payments.summary();
+  }
+
   @Get("payments/receipt/:receiptNumber")
   @RequirePermissions("receipt.read")
   @ApiOperation({ summary: "Xem lại biên lai theo số biên lai" })

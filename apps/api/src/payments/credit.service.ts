@@ -179,7 +179,7 @@ export class CreditService {
       ...(studentId && { studentId }),
     };
     const [items, total] = await Promise.all([
-      this.repo.findLedger({ where, skip, take: limit }),
+      this.repo.findCredits({ where, skip, take: limit }),
       this.repo.countLedger(where),
     ]);
     return {

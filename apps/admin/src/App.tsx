@@ -47,6 +47,8 @@ const EnrollmentForm = lazy(() => import("./pages/enrollments/EnrollmentForm"));
 const ClassSessionForm = lazy(() => import("./pages/class-sessions/ClassSessionForm"));
 const SessionAttendance = lazy(() => import("./pages/class-sessions/SessionAttendance"));
 const Attendance = lazy(() => import("./pages/Attendance"));
+const SellAndCollect = lazy(() => import("./pages/payments/SellAndCollect"));
+const MoneyOverview = lazy(() => import("./pages/payments/MoneyOverview"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -442,6 +444,22 @@ export default function App() {
                 element={
                   <PermissionRoute permission={PERMISSIONS.ATTENDANCE_READ}>
                     <Attendance />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/payments"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.PAYMENT_CREATE}>
+                    <SellAndCollect />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="/payments/overview"
+                element={
+                  <PermissionRoute permission={PERMISSIONS.PAYMENT_READ}>
+                    <MoneyOverview />
                   </PermissionRoute>
                 }
               />

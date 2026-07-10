@@ -136,6 +136,21 @@ export class PaymentRecordingService {
     };
   }
 
+  /**
+   * The Owner money view (Q10) — three strictly separate derived figures, never
+   * blended (BI-10): settled revenue (Σ PAYMENT), outstanding receivables, and
+   * credit liability (money owed back). All derived, no stored counter (BI-7);
+   * the client only displays them (no client-side money math).
+   */
+  async summary() {
+    const [revenue, outstanding, creditLiability] = await Promise.all([
+      this.derivedMoney.getRevenue(),
+      this.derivedMoney.getTotalOutstanding(),
+      this.derivedMoney.getTotalCreditLiability(),
+    ]);
+    return { revenue, outstanding, creditLiability };
+  }
+
   /** Reprint a receipt by its permanent number (Q8 reusable shape). */
   async findReceipt(receiptNumber: number) {
     const row = await this.repo.findByReceiptNumber(receiptNumber);
