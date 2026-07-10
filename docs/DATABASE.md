@@ -172,6 +172,61 @@ Attendance is consequence-free evidence and never stores derivable data: no teac
 
 ---
 
+# Money: Financial Evidence (Ledger) → Derived Money (BillingCycle × LedgerEntry)
+
+This is the money-side proof that _Evidence → Derived Balance_ generalizes: _Financial Evidence (an append-only ledger) → Derived Money_. Nothing is a stored money counter — outstanding, revenue and credit are all queries.
+
+```
+Enrollment                                   Student
+    | 1                                          | 1
+    | N                                          | N
+BillingCycle (snapshot artifact)             LedgerEntry (append-only Financial Evidence)
+  id                                           id
+  enrollmentId  ── FK → enrollments.id         type   (CHARGE|PAYMENT|CREDIT_GRANT|CREDIT_OFFSET|REFUND)
+  status        (PENDING|ACTIVE|               amount (Decimal, UNSIGNED — P1)
+                 COMPLETED|CANCELLED)          studentId       ── FK → students.id
+  snapshotPrice    (Decimal, frozen at sale)   billingCycleId? ── FK → billing_cycles.id (RESTRICT)
+  snapshotDiscount?(Decimal)                   method?         (CASH|BANK_TRANSFER — PAYMENT only)
+  sessionsSold  (Int, the cap this cycle       receiptNumber?  (Int @unique — from receipt_number_seq, PAYMENT only, D17)
+                 grants)                        creditSource?   (OVERPAYMENT|WITHDRAWAL — CREDIT_GRANT only, BI-9)
+  note? / audit / soft-delete                  refundStatus?   (NOT_REFUNDED|REFUNDED — CREDIT_GRANT only)
+                                               note? / createdById? / soft-delete
+```
+
+Indexes: BillingCycle — `enrollmentId`, `status`, `deletedAt`; LedgerEntry — `type`, `studentId`, `billingCycleId`, `deletedAt`. All FKs are `ON DELETE RESTRICT` (recorded money evidence is never cascade-deleted).
+
+Why uniqueness is partial indexes in raw SQL
+
+Three business rules are **database-enforced**, not application-only — each a partial unique index in raw migration SQL (Prisma's DSL cannot express partial indexes, so there is no `@@unique`; writers `create` and treat `P2002` as "a concurrent writer won"):
+
+- `billing_cycle_one_active_key` on `(enrollmentId) WHERE status = 'ACTIVE' AND "deletedAt" IS NULL` — at most one ACTIVE cycle per enrollment (the `enrollments_active_student_class_key` convention, verbatim).
+- `billing_cycle_one_pending_key` on `(enrollmentId) WHERE status = 'PENDING' AND "deletedAt" IS NULL` (F1) — at most one PENDING successor, however many times lazy renewal fires. BI-4's "exactly one" rests on this index, not on an app guard.
+- `ledger_one_charge_per_cycle_key` on `(billingCycleId) WHERE type = 'CHARGE' AND "deletedAt" IS NULL` (R1/BI-12) — at most one CHARGE per cycle, which makes healing a chargeless orphan idempotent under retry/concurrency: a duplicate CHARGE insert raises `P2002` and is swallowed as a no-op.
+
+The receipt number is a global Postgres **SEQUENCE** `receipt_number_seq` (`nextval` in a single statement) — never reused, gaps acceptable; formatted `RC-000001`.
+
+Derived Money rule (no counter columns)
+
+Amounts are stored **UNSIGNED** (P1); the sign algebra lives in exactly one place, `DerivedMoneyService`:
+
+```
+outstanding(cycle)     = Σ CHARGE − Σ PAYMENT − Σ CREDIT_OFFSET      (per cycle)
+revenue                = Σ PAYMENT                                    (never any credit type — BI-10)
+creditBalance(student) = Σ CREDIT_GRANT − Σ CREDIT_OFFSET − Σ REFUND  (per student)
+```
+
+These are the BI-11 conservation equations, so value is never created or destroyed. **Revenue and liability are strictly separate views (BI-10)** — credit is never counted as revenue. Every figure is a grouped SUM (aggregate, never N+1). Cross-cycle attribution is **capacity-based FIFO (P4)**: cycles ordered by creation, each absorbs consumption up to its `sessionsSold` cap — a pure function of current evidence, so a 48h retroactive attendance correction never rots a stored boundary (nothing is stored). `LessonConsumptionService` stays the single source of the consumed total.
+
+Time-frozen Business Artifact (D17) and price freeze (D14)
+
+The Receipt is a **Time-frozen Business Artifact** — the deliberate, justified exception to "never store derivable data" (not a precedent for casual denormalization): its receipt number and the PAYMENT row's `studentId` + `billingCycleId` are frozen on the append-only row. The BillingCycle's `snapshotPrice`/`snapshotDiscount` are frozen at sale and hard-frozen once a receipt exists (D14) — a later `Course.basePrice` change never moves an existing cycle's price.
+
+What money must never store, and never delete
+
+No stored money counter exists anywhere — no balance column on Enrollment/Student/BillingCycle. The ledger is **append-only and never hard-deleted (D18/BI-5/BI-6)**: a correction is a new audited row; a refund is a `NOT_REFUNDED → REFUNDED` status transition plus a REFUND row, never a value erase. Every money write is audited as a critical business action.
+
+---
+
 # Naming
 
 ## Models
@@ -490,6 +545,8 @@ tuitionFee Decimal
 amount Decimal
 
 discount Decimal
+
+Money is evidence, never a stored counter. Balances (outstanding, revenue, credit) are derived queries over the append-only `LedgerEntry`, never a balance column — see "Money: Financial Evidence (Ledger) → Derived Money" above. Ledger amounts are stored **unsigned**; the per-type sign algebra lives only in `DerivedMoneyService`.
 
 ---
 

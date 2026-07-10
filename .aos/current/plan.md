@@ -80,7 +80,16 @@
     IT re-run should still be executed by a session with local-DB access. The T22 stopwatch is wired
     so the number is captured the moment the flow is walked on a seeded local DB. **Both are the top
     Checkpoint-#2 items** — number to be recorded here once measured.
-  - Then Phase 7 docs, Phase 8 gates + Reflection; Stage-3 checkpoint #2 at end of Phase 8.
+  - **Phase 7 (documentation) — DONE (T25).** `docs/DATABASE.md`: new "Money: Financial Evidence
+    (Ledger) → Derived Money" narrative (models + diagram, the three DB-enforced partial-uniques
+    (one ACTIVE / one PENDING / one CHARGE), receipt SEQUENCE, the derived-money equations +
+    capacity-FIFO, D17 Time-frozen Business Artifact + D14 price freeze, D18 no-hard-delete) + a
+    cross-reference in the "# Money" standards section. `docs/API.md`: new "Payments API → Revenue
+    Collection & Balance Settlement" (all endpoints incl. the additive `GET /payments/summary`,
+    one-round-trip payment+credit flow, permissions R1, revenue-vs-liability separation, no-RPC).
+    `docs/ROADMAP.md`: Payment marked in-progress + dated "Payment (Tuition) v1" section (honest
+    status: money core + frontend done, close-out pending). Prettier via pre-commit hook.
+  - Phase 8 gates + Reflection NEXT; Stage-3 checkpoint #2 at end of Phase 8.
     _(CLI: update this section after each phase.)_
 - Not started: Stage-3 review of implementation → Testing close → Reflection → LESSON.md
   (carry ⟡ Time-frozen Business Artifact + ⟡ Evidence heals state + Knowledge Gain score) →

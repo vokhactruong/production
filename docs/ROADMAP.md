@@ -51,12 +51,12 @@ Features
 - Class Schedule (Planning Layer) ✅
 - Class Session (Execution Layer, schedule-generated) ✅
 - Attendance ✅
-- Tuition
+- Tuition (Payment) 🚧 — Slice #2, money core + admin frontend done; slice close-out pending
 - Notifications
 
 Next
 
-Payment (Tuition)
+Payment (Tuition) close-out — Stage-3 review, `<1-min` collect + real-time revenue KPIs, then Slice #3
 
 Success
 
@@ -110,6 +110,34 @@ Known Constraint (recorded, deferred): how to calculate remaining lessons for
 students who enroll mid-cycle belongs to Payment (Slice #2). A COMPLETED
 session never accepts new attendance rows, so backfill cannot pre-empt that
 decision.
+
+---
+
+## Payment (Tuition) v1 — in progress (2026-07-10)
+
+Revenue Collection & Balance Settlement capability — the money-side proof that
+_Evidence → Derived Balance_ generalizes to _Financial Evidence (Ledger) →
+Derived Money_. One append-only `LedgerEntry`
+(CHARGE/PAYMENT/CREDIT_GRANT/CREDIT_OFFSET/REFUND) with unsigned amounts; every
+balance (outstanding, revenue, credit) is a grouped SUM — no counter columns.
+Debt is born only at sale (BI-1); a payment + any overpayment-credit are written
+in one atomic `createMany` (the `<1-minute` collect flow); the Receipt is a
+Time-frozen Business Artifact with a global sequence number (D17). Renewal is
+lazy on the enrollment read path, and cycle status self-heals from evidence
+("Evidence heals state" — F2). Three database-enforced partial-uniques (one
+ACTIVE, one PENDING, one CHARGE per cycle). Revenue and liability are strictly
+separate views (BI-10). RBAC R1: Receptionist + Accountant roles; Teacher gets
+nothing. See DATABASE.md ("Money: Financial Evidence") and API.md ("Payments
+API") for the full model.
+
+Status: money core (Phases 1–5, 38/38 invariant tests) + R1 self-healing
+(BI-12) + admin frontend (Phase 6: Sell/Collect + Owner revenue/credit) are
+implemented; slice close-out (Stage-3 review, `<1-min` collect measurement,
+real-time revenue KPI) is the remaining gate.
+
+Deferred (out of scope, additive later): online payment gateways, Vietnamese
+e-invoice, parent-facing screens, tuition reminders/notifications, credit
+sources beyond withdrawal + overpayment, per-organization policy configuration.
 
 ---
 

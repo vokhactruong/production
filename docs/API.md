@@ -91,6 +91,28 @@ E1 — session completion gate: `PATCH /class-sessions/:id` with `status: COMPLE
 
 ---
 
+## Payments API → Revenue Collection & Balance Settlement
+
+Endpoints: `/billing-cycles`, `/payments`, `/credits`. Money is derived from an append-only ledger — every response's money fields are computed, never read from a counter (see DATABASE.md "Money: Financial Evidence"). Credit is a **branch of the payment flow, not a separate resource tree**.
+
+Responsibilities:
+
+- `POST /billing-cycles` (`billing.create`): sell a package — creates a PENDING `BillingCycle` carrying the frozen snapshot price (pro-rata default over remaining package lessons; optional `sessionsSold` / `discount` / `priceOverride`) and writes the `CHARGE` ledger row that IS the debt (BI-1: debt is born only here). A second PENDING cycle raises `P2002`; a _chargeless_ orphan is healed idempotently from its own snapshot (BI-12), a real charge is a 409 conflict.
+- `GET /billing-cycles` (`billing.read`) · `GET /billing-cycles/:id` (`billing.read`): `{ items, meta }` list / detail with the additive derived field `outstanding` per cycle.
+- `POST /payments` (`payment.create`): record a payment in **one round-trip** (the `<1-minute` KPI) — mints a receipt (global SEQUENCE, D17) and, iff `amount > outstanding`, grants the overage as credit, writing PAYMENT + CREDIT_GRANT in a **single `createMany` statement** (atomic on Postgres, no interactive transaction — ⚑5). A settling payment activates a PENDING cycle (F2 fast path; the enrollment read path is the convergence safety net). Returns `{ receiptNumber, receiptCode, settled, credited, method, cycleStatus, outstanding }`.
+- `GET /payments` (`payment.read`): PAYMENT rows + `receiptCode`, `{ items, meta }`.
+- `GET /payments/receipt/:receiptNumber` (`receipt.read`): reprint a receipt by its permanent number (Q8 reusable shape) — display-only projection, never recomputed.
+- `GET /payments/summary` (`payment.read`): the Owner money view (Q10) — three **strictly separate** derived figures `{ revenue, outstanding, creditLiability }`, never blended (BI-10). Additive derived read (added Phase 6 to serve the Owner view; realizes the three derived views already frozen in binding item 2).
+- `GET /credits` (`credit.read`): CREDIT_GRANT rows (+ joined student for display), `{ items, meta }`.
+- `POST /credits/withdraw` (`credit.manage`): withdraw a cycle — unused paid value → CREDIT_GRANT, cycle CANCELLED. `POST /credits/offset` (`credit.manage`): apply student credit to a cycle's outstanding — one CREDIT_OFFSET lowers owed **and** liability by the same amount (BI-10, conserved).
+- `PATCH /credits/:id/refund` (`credit.refund`): `NOT_REFUNDED → REFUNDED` on the grant + a REFUND row first (so a retry fails the balance guard — money-out can never double). Never a delete, never a value erase (D18/BI-6).
+
+There is no RPC verb: activation is a **consequence** of a settling payment, never a call. No `$transaction` on any money path.
+
+Permissions: `billing.*` / `payment.*` / `credit.read` / `receipt.read` → Receptionist + Accountant + Admin tier; `credit.manage` / `credit.refund` → Accountant + Admin tier only; **Teacher gets none** (R1). Revenue and liability are surfaced as separate figures, never a single blended number.
+
+---
+
 # API Style
 
 Use RESTful APIs.
