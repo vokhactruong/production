@@ -1,6 +1,6 @@
 # Active Decisions
 
-> **Runtime version: slice-02.v8** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v9** — valid only with matching `manifest.md`.
 > **Responsibility:** WHAT is already decided and binding.
 
 ## ❄️ THE FROZEN IMPLEMENTATION CONTRACT (Execution Authorization, 2026-07-09)
@@ -54,10 +54,28 @@ adopted-with-evidence mechanisms count, projections don't (A10 discipline).
 - ⟡ Evidence-heals-state: 3rd occurrence recorded; ratification still waits for a non-School-Portal
   context (CRM/Booking/HRM) — Founder's stricter Rule-of-Three reading.
 
+## Checkpoint #2 rulings (Founder, 2026-07-10)
+
+- **Drift 1 APPROVED:** `GET /payments/summary` + `getTotalOutstanding` — additive read-only
+  realization of binding-item-2's derived views; aggregation belongs on the server, never the UI.
+- **Drift 2 APPROVED:** `billing.override` seeded as its own permission (Business Authority, not
+  CRUD — precedent line: attendance.correct → credit.refund → billing.override). Grant:
+  Receptionist + Accountant + Admin tier; RBAC-configurable. **→ CLI task: update seed + admin
+  constants + gate the override UI on it.**
+- **A13** third standing Reflection question (Organization Behavior evidence) — recorded in
+  RFC-001 as the FINAL pre-freeze addendum.
+- **RFC-001 freeze notice:** upon Meeting #2 ratification → STABLE; new improvements → RFC-002.
+- **Meeting #2 opens only with real runtime evidence.** Agenda:
+  `docs/slices/slice-02-payment/REFLECTION_MEETING_2.md`.
+
+## R1 record (resolved 2026-07-09)
+
+Sale-path chargeless-PENDING self-heal from the cycle's frozen snapshot; migration
+`20260711000000_one_charge_per_cycle` (DB partial-unique = idempotent healing under concurrency);
+reconcile heals renewal orphans in-flow (BI-12). IT-14 proves retry×N ⇒ exactly one cycle + one
+CHARGE. Suite 38/38 green.
+
 ## Open escalations (blocking)
 
-- _(none)_ — **R1 RESOLVED (2026-07-09):** sale-path chargeless-PENDING self-heal from the cycle's
-  frozen snapshot (real conflict when charge>0 throws); new migration
-  `20260711000000_one_charge_per_cycle` (DB partial-unique = idempotent healing under concurrency);
-  reconcile heals renewal orphans in-flow (BI-12). IT-14 proves retry×N (sequential + concurrent)
-  ⇒ exactly one cycle + one CHARGE. Full suite 38/38 green. Phase 6 unblocked.
+- **Runtime evidence for Meeting #2:** IT re-run green + seed idempotency ×2 + measured <1-min
+  KPI + `billing.override` seed task — CLI, unblocked with local TEST_DATABASE_URL.
