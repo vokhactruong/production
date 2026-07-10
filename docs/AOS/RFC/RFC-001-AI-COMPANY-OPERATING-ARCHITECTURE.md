@@ -101,6 +101,13 @@ always under Stage-3 supervision, never the responsible owner of Implementation.
   about failure recovery?"_ Rationale: the Reference Slice is accumulating **Reference Failure
   Recovery** knowledge (retroactive corrections; self-healing partial success) — a knowledge
   branch tracked deliberately, without creating a framework for it (A6).
+- **A12 — Second standing Reflection question (Founder, 2026-07-10):** _"Which Business Rule
+  became a Database Rule this slice?"_ Evidence so far — Attendance: unique session identity,
+  one-active enrollment; Payment: one PENDING, one ACTIVE, one CHARGE per cycle, receipt
+  never-reused. It measures the moment a rule stops being documentation and becomes physics.
+  Related **⟡ Pattern Candidate #4 — "Business Invariant → Database Invariant"** (the enforcement
+  arm of Business Invariant Tests: the test proves, the database enforces) — two slices repeated
+  it; tracked, not ratified (A6).
 - **A10 — Reference Slice & Knowledge Gain KPI (Founder, post-meeting).** Attendance is the
   company's **Reference Slice** — the benchmark every future slice is compared against. Every
   slice is scored on two axes at its Reflection Meeting: _Shipped through AOS_ (yes/no) and

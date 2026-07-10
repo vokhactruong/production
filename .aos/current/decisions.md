@@ -1,6 +1,6 @@
 # Active Decisions
 
-> **Runtime version: slice-02.v7** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v8** — valid only with matching `manifest.md`.
 > **Responsibility:** WHAT is already decided and binding.
 
 ## ❄️ THE FROZEN IMPLEMENTATION CONTRACT (Execution Authorization, 2026-07-09)
@@ -27,8 +27,12 @@ Authorization + §Binding architecture. Changing ANY item = stop → escalate �
 
 ## Standing company decisions
 
-RFC-001 (Operational · Provisional); A6–A10; A7 push rule; A8 CLI end-to-end; Scope Gate;
-⟡ Pattern Candidates tracked for LESSON: Time-frozen Business Artifact; **Evidence heals state**.
+RFC-001 (Operational · Provisional); A6–A12 (A11/A12 = standing Reflection questions); A7 push
+rule; A8 CLI end-to-end; Scope Gate.
+⟡ Pattern Candidates tracked for LESSON (4): Time-frozen Business Artifact · Evidence heals
+state (×3, awaits non-School-Portal context) · Capacity FIFO · **Business Invariant → Database
+Invariant** (new, Founder 2026-07-10). Knowledge Gain: scored at Reflection Meeting #2 only —
+adopted-with-evidence mechanisms count, projections don't (A10 discipline).
 
 ## Stage-3 ratified during implementation
 

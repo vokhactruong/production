@@ -1,6 +1,6 @@
 # Current Task
 
-> **Runtime version: slice-02.v7** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v8** — valid only with matching `manifest.md`.
 > **Responsibility:** WHAT is being worked on.
 
 - **Feature:** Payment (Tuition) — Product Slice #2 (Capability: Revenue Collection & Balance Settlement)
