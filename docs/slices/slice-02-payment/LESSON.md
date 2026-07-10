@@ -96,12 +96,12 @@ doctrine, and both halves reduce to one root:
 - Docs updated (DATABASE/API/ROADMAP) — **met** (Phase 7).
 - Engineering gates build/lint/type-check — **met** (Phase 8: all 8 packages type-check, lint 0
   errors, api + admin build).
-- **⚠ `<1-min` collect measured + invariant re-run + seed idempotency re-check — NOT run this
-  session.** Environmental blocker, not a defect: the local `TEST_DATABASE_URL`
-  (`school_portal_test`) is absent here (only the production Supabase URL is configured, which the
-  contract forbids for tests/servers); local PG18 is up but the test role's credential is not
-  available. The T22 in-app stopwatch (enrollment-chosen → receipt-issued) is wired to capture the
-  number the instant the flow is walked on a seeded local DB. **Top Checkpoint-#2 items.**
+- **`<1-min` collect measured + invariant re-run + seed idempotency — DONE at Checkpoint-#2
+  close-out** (Founder provided the local `TEST_DATABASE_URL`). **KPI: full read→sell→collect→receipt
+  server path, median 28.4 ms / p95 46.1 ms / cold 104.8 ms across 25 runs — ~2100× under the 60s
+  gate (PASS).** IT **41/41** green (incl. new IT-15). Seed idempotent ×2. (No browser driver
+  in-session, so the number is the server-path the KPI depends on; the in-app stopwatch adds only
+  human click + localhost render.)
 
 ## ⟡ Pattern Candidates carried (Rule of Three — tracked, not ratified; A6)
 
@@ -161,12 +161,13 @@ stricter Rule-of-Three requires a non-School-Portal context. Keep as candidate. 
 slice used `chore`/`docs` and an `aos` scope (warning-only). Add them so state/test commits validate
 cleanly. Layer: tooling. (Carried from Checkpoint #1.)
 
-**P6 — Contract-vs-reality drifts to reconcile at Meeting #2** (implementation-detail, surfaced by
-the CLI, never self-decided): (a) `GET /payments/summary` + two `DerivedMoneyService` aggregate
-reads were added in Phase 6 to serve the Owner view the DoD requires — realization of binding-item-2
-derived views, flagged for ratification; (b) `billing.override` is referenced in the sell DTO but is
-**not** a seeded R1 permission — the price-override UI is gated on `billing.create` (the real
-authorization); confirm intended granularity.
+**P6 — Contract-vs-reality drifts — RATIFIED at Checkpoint #2 (Founder, 2026-07-10).** (a)
+`GET /payments/summary` + the two `DerivedMoneyService` aggregate reads (Owner view) — **approved**
+as realization of the binding-item-2 derived views. (b) `billing.override` — **approved as its own
+distinct permission** (not folded into `billing.create`): now seeded (granted Receptionist +
+Accountant + Admin tier; Teacher excluded), enforced server-side in `BillingService.sell`
+(`ForbiddenException` without it — the `attendance.correct` precedent), UI gated on the new
+`BILLING_OVERRIDE` constant, and covered by **IT-15**. Both closed.
 
 **P7 — Supabase production baseline** (standing, from Checkpoint #1): `_prisma_migrations` reports 0
 applied vs 21 in-repo; before any deploy, baseline via the direct URL with a backup. Slice #1 has

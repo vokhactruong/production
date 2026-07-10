@@ -66,6 +66,7 @@ export const PERMISSIONS = {
   ATTENDANCE_CORRECT: "attendance.correct",
   BILLING_READ: "billing.read",
   BILLING_CREATE: "billing.create",
+  BILLING_OVERRIDE: "billing.override",
   PAYMENT_READ: "payment.read",
   PAYMENT_CREATE: "payment.create",
   CREDIT_READ: "credit.read",

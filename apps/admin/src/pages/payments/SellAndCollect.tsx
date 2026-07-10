@@ -357,19 +357,21 @@ export default function SellAndCollect() {
                     />
                   </label>
                 </div>
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-slate-600">
-                    Giá tự nhập (đ) — để trống dùng giá theo tỉ lệ buổi còn lại
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={priceOverride}
-                    onChange={(e) => setPriceOverride(e.target.value)}
-                    placeholder="Tự động tính theo hệ thống"
-                    className="h-10 rounded-xl border border-slate-300 px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </label>
+                <Can permission={PERMISSIONS.BILLING_OVERRIDE}>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-slate-600">
+                      Giá tự nhập (đ) — để trống dùng giá theo tỉ lệ buổi còn lại
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={priceOverride}
+                      onChange={(e) => setPriceOverride(e.target.value)}
+                      placeholder="Tự động tính theo hệ thống"
+                      className="h-10 rounded-xl border border-slate-300 px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </label>
+                </Can>
                 <button
                   onClick={handleSell}
                   disabled={sellMutation.isPending}

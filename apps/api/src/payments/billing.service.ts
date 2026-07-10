@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -13,6 +14,10 @@ import { DerivedMoneyService } from "./derived-money.service";
 import { SellPackageDto, BillingCycleQueryDto } from "./dto/payment.dto";
 
 const PENDING_CONFLICT = "Đăng ký học đã có một chu kỳ thanh toán đang chờ (PENDING)";
+
+/** A manual price override is a privileged action — checked as a permission,
+ * never a role name (decisions.md), mirroring `attendance.correct`. */
+const BILLING_OVERRIDE_PERMISSION = "billing.override";
 
 @Injectable()
 export class BillingService {
@@ -31,7 +36,13 @@ export class BillingService {
    * remaining package lessons from Slice #1 consumption (OQ-A), never calendar.
    * PENDING → ACTIVE happens later, only via a settling payment (Q3).
    */
-  async sell(dto: SellPackageDto, actorId: string) {
+  async sell(dto: SellPackageDto, actorId: string, actorPermissions: string[] = []) {
+    // Q5: a manual price override requires the distinct billing.override
+    // permission; the pro-rata default needs only billing.create.
+    if (dto.priceOverride != null && !actorPermissions.includes(BILLING_OVERRIDE_PERMISSION)) {
+      throw new ForbiddenException("Bạn không có quyền bán gói với giá tự nhập");
+    }
+
     const enrollment = await this.prisma.enrollment.findFirst({
       where: { id: dto.enrollmentId, deletedAt: null },
       select: {

@@ -44,7 +44,7 @@ export class PaymentsController {
   @RequirePermissions("billing.create")
   @ApiOperation({ summary: "Bán gói (tạo chu kỳ thanh toán + ghi nợ)" })
   sell(@Body() dto: SellPackageDto, @CurrentUser() user: RequestUser) {
-    return this.billing.sell(dto, user.id);
+    return this.billing.sell(dto, user.id, user.permissions);
   }
 
   @Get("billing-cycles")

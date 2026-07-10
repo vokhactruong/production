@@ -1,6 +1,6 @@
 # Current Plan
 
-> **Runtime version: slice-02.v8** — valid only with matching `manifest.md`.
+> **Runtime version: slice-02.v9** — valid only with matching `manifest.md`.
 > **Responsibility:** WHERE the work stands and what comes next.
 
 - **Plan source:** `docs/slices/slice-02-payment/IMPLEMENTATION_PLAN.md` (**EXECUTION AUTHORIZED — Implementation Contract FROZEN**, Founder + Chief Architect, 2026-07-09)
@@ -102,21 +102,39 @@ LESSON.md` (DRAFT) written:** A11 failure-recovery answer (R1 material → "reco
     A12, BI-12 in-flow-healing discipline) — ratified only at Meeting #2. RFC/disposition proposals
     P1–P7 recorded (incl. P6: the two flagged contract-vs-reality drifts — `/payments/summary`
     additive read + `billing.override` not-seeded).
-- Not started: **Reflection Meeting #2** (score Knowledge Gain; rule on P1–P7; ratify or defer the ⟡
-  candidates) → Stage-3 review of implementation → live KPI + IT re-run on local DB → Done/Release →
-  Slice #3.
+  - **⛳ CHECKPOINT #2 RATIFIED (Founder, 2026-07-10, v9) + pre-Meeting-#2 close-out — DONE.**
+    Drifts approved; local `TEST_DATABASE_URL` provided. The four close-out items, all run on
+    `school_portal_test`:
+    1. **`billing.override` = distinct permission (Founder-approved).** Seeded (`PERMISSIONS_SEED`),
+       granted to **Receptionist + Accountant + Admin tier** (via `MONEY_PERMISSIONS_ALL` +
+       `RECEPTIONIST_MONEY`); Teacher excluded — DB-verified (granted to Accountant/Admin/Receptionist/
+       Super Admin only). ATTENDANCE-style constant `BILLING_OVERRIDE` added; **override UI now gated
+       on it** (not `billing.create`); **backend enforces it too** — `BillingService.sell` throws
+       `ForbiddenException` if `priceOverride` is set without the permission (the `attendance.correct`
+       precedent; optional `actorPermissions` param, controller passes `user.permissions`).
+    2. **IT full suite re-run: 41/41 green** (38 prior + new **IT-15** billing.override authorization:
+       reject-without-perm writes nothing · allow-with-perm snapshot=override · pro-rata needs no perm).
+    3. **Seed idempotency ×2** on the test DB — identical runs; grants correct; duplicates structurally
+       impossible (`roleId_permissionId` composite unique). 74 permissions, `billing.override` present.
+    4. **T22 `<1-min` collect KPI — MEASURED** (real services vs real Postgres, full path
+       read→sell→collect-with-overpayment→receipt, N=25): **cold 104.8 ms · median 28.4 ms · p95
+       46.1 ms · max 104.8 ms · mean 31.4 ms** → **~2100× under the 60,000 ms gate.** (No browser
+       driver in-session, so this is the server-path measurement the KPI depends on; the in-app
+       stopwatch adds only human click/localhost-render on top — a one-click human confirm remains.)
+       PASS.
+- Not started: **Reflection Meeting #2** — agenda `docs/slices/slice-02-payment/REFLECTION_MEETING_2.md`
+  (score Knowledge Gain; rule on P1–P7; ratify or defer the ⟡ candidates) → Stage-3 review → Done/
+  Release → Slice #3.
 
 ## Next step
 
-- **⛳ STAGE-3 CHECKPOINT #2 — handoff (Phases 6–8 complete).** Implementation is code-complete and
-  green on every runnable gate; commits pushed per phase (A7). Founder/Stage-3 to review, then:
-  1. **Run on local DB** (needs `TEST_DATABASE_URL=…school_portal_test`): `pnpm --filter @school/api test`
-     (expect 38/38), `pnpm db:seed` twice (idempotency), and walk the Sell→Collect flow to record the
-     **`<1-min` collect measurement** (in-app stopwatch) + real-time revenue KPI into this plan.
-  2. **Ratify the two flagged drifts** (LESSON P6): `GET /payments/summary` additive read;
-     `billing.override` not-in-R1 (override UI gated on `billing.create`).
-  3. **Reflection Meeting #2:** score Knowledge Gain (proposed 3), rule on P1–P7, decide the ⟡
-     candidates (Rule of Three / non-School-Portal context for "Evidence heals state").
+- **Reflection Meeting #2** — the only remaining gate before Done/Release. Agenda:
+  `docs/slices/slice-02-payment/REFLECTION_MEETING_2.md`, which opens only with runtime evidence —
+  now in hand: **IT 41/41**, **seed idempotency ×2**, **measured collect KPI (median 28.4 ms, PASS)**.
+  Meeting to: score Knowledge Gain (proposed 3), rule on LESSON P1–P7, and decide the ⟡ candidates
+  (Rule of Three / non-School-Portal context for "Evidence heals state"). Optional human confirm: a
+  one-click browser walk of Sell→Collect to eyeball the in-app stopwatch (server path already
+  measured).
 
 ## Supervision gates (Stage 3 — checked at every handoff and at the implementation review)
 

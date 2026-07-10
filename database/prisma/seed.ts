@@ -91,6 +91,11 @@ const PERMISSIONS_SEED = [
     code: "billing.create",
     description: "Bán gói (tạo chu kỳ thanh toán)",
   },
+  {
+    name: "Override Billing Price",
+    code: "billing.override",
+    description: "Bán gói với giá tự nhập (bỏ qua giá theo tỉ lệ buổi)",
+  },
   { name: "Read Payment", code: "payment.read", description: "Xem thanh toán" },
   { name: "Create Payment", code: "payment.create", description: "Ghi nhận thanh toán" },
   { name: "Read Credit", code: "credit.read", description: "Xem credit" },
@@ -117,6 +122,7 @@ const ROLES_SEED = [
 const MONEY_PERMISSIONS_ALL = [
   "billing.read",
   "billing.create",
+  "billing.override",
   "payment.read",
   "payment.create",
   "credit.read",
@@ -124,9 +130,13 @@ const MONEY_PERMISSIONS_ALL = [
   "credit.refund",
   "receipt.read",
 ];
+// billing.override is a distinct privileged permission (Founder-approved): the
+// authority to sell at a manual price instead of the pro-rata default. Granted
+// to Receptionist + Accountant + Admin tier (Q5).
 const RECEPTIONIST_MONEY = [
   "billing.read",
   "billing.create",
+  "billing.override",
   "payment.read",
   "payment.create",
   "credit.read",
